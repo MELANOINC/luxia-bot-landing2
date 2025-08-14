@@ -146,3 +146,9 @@ Los flujos existentes deben estar en:
 ---
 
 **🎉 ¡LISTO PARA VENDER Y GENERAR INGRESOS!**
+
+---
+
+## 🔒 Despliegue en Producción
+
+Consulta `PRODUCTION.md` para conocer el entorno Docker con PostgreSQL, Redis y Nginx listo para producción.
