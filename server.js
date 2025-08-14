@@ -26,7 +26,11 @@ app.get('/health', async (_req, res) => {
     await redis.ping();
     res.status(200).send('OK');
   } catch (err) {
-    res.status(500).send('FAIL');
+    console.error('Health check failed:', err);
+    res.status(500).json({
+      status: 'FAIL',
+      error: err && err.message ? err.message : String(err)
+    });
   }
 });
 
