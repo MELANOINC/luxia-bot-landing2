@@ -70,6 +70,7 @@ function isHotLead(data) {
  * Main
  */
 window.addEventListener('DOMContentLoaded', () => {
+  initNavigation();
   const form = $('#demo-form');
   if (!form) return;
 
@@ -136,3 +137,149 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
+/**
+ * Enhanced Navigation System
+ */
+function initNavigation() {
+  // Mobile menu toggle
+  const mobileToggle = document.querySelector('.mobile-menu-toggle');
+  const mainNav = document.querySelector('.main-nav');
+  
+  if (mobileToggle && mainNav) {
+    mobileToggle.addEventListener('click', () => {
+      const isExpanded = mobileToggle.getAttribute('aria-expanded') === 'true';
+      mobileToggle.setAttribute('aria-expanded', !isExpanded);
+      mainNav.classList.toggle('active');
+    });
+  }
+
+  // Close mobile menu when clicking outside
+  document.addEventListener('click', (e) => {
+    if (mainNav && !mainNav.contains(e.target) && !mobileToggle.contains(e.target)) {
+      mainNav.classList.remove('active');
+      mobileToggle.setAttribute('aria-expanded', 'false');
+    }
+  });
+
+  // Active section highlighting
+  const navLinks = document.querySelectorAll('.nav-link');
+  const sections = document.querySelectorAll('section[id]');
+  
+  function highlightActiveSection() {
+    const scrollY = window.pageYOffset;
+    const windowHeight = window.innerHeight;
+    
+    sections.forEach(section => {
+      const sectionTop = section.offsetTop - 100;
+      const sectionHeight = section.offsetHeight;
+      const sectionId = section.getAttribute('id');
+      
+      if (scrollY >= sectionTop && scrollY < sectionTop + sectionHeight) {
+        // Remove active class from all links
+        navLinks.forEach(link => link.classList.remove('active'));
+        
+        // Add active class to current section link
+        const activeLink = document.querySelector(`[href="#${sectionId}"]`);
+        if (activeLink && activeLink.classList.contains('nav-link')) {
+          activeLink.classList.add('active');
+        }
+      }
+    });
+  }
+
+  // Smooth scrolling with offset for fixed header
+  navLinks.forEach(link => {
+    link.addEventListener('click', (e) => {
+      const href = link.getAttribute('href');
+      if (href.startsWith('#')) {
+        e.preventDefault();
+        const targetId = href.substring(1);
+        const targetSection = document.getElementById(targetId);
+        
+        if (targetSection) {
+          const headerHeight = document.querySelector('.site-header').offsetHeight;
+          const targetPosition = targetSection.offsetTop - headerHeight - 20;
+          
+          window.scrollTo({
+            top: targetPosition,
+            behavior: 'smooth'
+          });
+          
+          // Close mobile menu if open
+          if (mainNav && mainNav.classList.contains('active')) {
+            mainNav.classList.remove('active');
+            mobileToggle.setAttribute('aria-expanded', 'false');
+          }
+        }
+      }
+    });
+  });
+
+  // Reading progress indicator
+  const progressBar = document.querySelector('.reading-progress');
+  function updateReadingProgress() {
+    const documentHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const scrolled = (window.scrollY / documentHeight) * 100;
+    if (progressBar) {
+      progressBar.style.width = Math.min(scrolled, 100) + '%';
+    }
+  }
+
+  // Back to top button
+  const backToTop = document.querySelector('.back-to-top');
+  function toggleBackToTop() {
+    if (backToTop) {
+      if (window.scrollY > 300) {
+        backToTop.classList.add('visible');
+      } else {
+        backToTop.classList.remove('visible');
+      }
+    }
+  }
+
+  if (backToTop) {
+    backToTop.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+
+  // Throttled scroll event listener
+  let scrollTimeout;
+  window.addEventListener('scroll', () => {
+    if (scrollTimeout) {
+      clearTimeout(scrollTimeout);
+    }
+    scrollTimeout = setTimeout(() => {
+      highlightActiveSection();
+      updateReadingProgress();
+      toggleBackToTop();
+    }, 10);
+  });
+
+  // Initialize on page load
+  highlightActiveSection();
+  updateReadingProgress();
+  toggleBackToTop();
+
+  // Keyboard navigation support
+  document.addEventListener('keydown', (e) => {
+    // Close mobile menu on Escape
+    if (e.key === 'Escape' && mainNav && mainNav.classList.contains('active')) {
+      mainNav.classList.remove('active');
+      mobileToggle.setAttribute('aria-expanded', 'false');
+      mobileToggle.focus();
+    }
+  });
+
+  // Focus management for accessibility
+  navLinks.forEach(link => {
+    link.addEventListener('focus', () => {
+      link.classList.add('focused');
+    });
+    
+    link.addEventListener('blur', () => {
+      link.classList.remove('focused');
+    });
+  });
+}

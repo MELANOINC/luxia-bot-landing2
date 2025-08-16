@@ -42,6 +42,9 @@
   </script>
 </head>
 <body>
+  <!-- Skip Navigation for Accessibility -->
+  <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+  
   <header class="site-header">
     <div class="container nav">
       <a class="brand" href="#inicio" aria-label="Melano Inc - Luxia Bot">
@@ -51,20 +54,67 @@
         </svg>
         <span>Luxia Bot™</span>
       </a>
+      
+      <!-- Mobile Menu Button -->
+      <button class="mobile-menu-toggle" aria-label="Abrir menú de navegación" aria-expanded="false">
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+      </button>
+      
       <nav class="main-nav">
-        <a href="#servicios">Servicios</a>
-        <a href="#embudo">Embudo</a>
-        <a href="#precios">Precios</a>
-        <a href="#contacto">Contacto</a>
+        <ul class="nav-list" role="menubar">
+          <li role="none">
+            <a href="#servicios" class="nav-link" role="menuitem">
+              <span class="nav-icon">🔧</span>
+              <span class="nav-text">Servicios</span>
+              <span class="nav-description">Automatización IA</span>
+            </a>
+          </li>
+          <li role="none">
+            <a href="#embudo" class="nav-link" role="menuitem">
+              <span class="nav-icon">🎯</span>
+              <span class="nav-text">Embudo</span>
+              <span class="nav-description">Proceso automatizado</span>
+            </a>
+          </li>
+          <li role="none">
+            <a href="#precios" class="nav-link" role="menuitem">
+              <span class="nav-icon">💰</span>
+              <span class="nav-text">Precios</span>
+              <span class="nav-description">Planes disponibles</span>
+            </a>
+          </li>
+          <li role="none">
+            <a href="#contacto" class="nav-link" role="menuitem">
+              <span class="nav-icon">📞</span>
+              <span class="nav-text">Contacto</span>
+              <span class="nav-description">Hablemos</span>
+            </a>
+          </li>
+        </ul>
         <a id="cta-calendly-nav" class="btn btn-light calendly-trigger" data-calendly-url="https://calendly.com/melanobruno" href="#contacto" role="button">Agendar demo</a>
       </nav>
+      
+      <!-- Search (optional, can be added later) -->
+      <div class="search-container" style="display: none;">
+        <input type="search" placeholder="Buscar..." class="search-input" aria-label="Buscar en el sitio">
+        <button class="search-button" aria-label="Ejecutar búsqueda">🔍</button>
+      </div>
     </div>
   </header>
 
-  <main id="inicio">
+  <main id="main-content">
     <!-- HERO -->
-    <section class="hero">
+    <section id="inicio" class="hero">
       <div class="container">
+        <!-- Breadcrumb Navigation -->
+        <nav class="breadcrumb" aria-label="Navegación de ruta">
+          <ol class="breadcrumb-list">
+            <li><a href="#inicio">Inicio</a></li>
+          </ol>
+        </nav>
+        
         <div class="badges">
           <span class="badge">IA + Automatización</span>
           <span class="badge">CRM Inmobiliario</span>
@@ -297,14 +347,32 @@
 
   <footer class="site-footer">
     <div class="container footer">
+      <!-- Enhanced Footer Navigation -->
       <div>
         <strong>Melano Inc</strong> · Luxia Bot™
         <div class="sub">PropTech · IA + CRM para inmobiliarias</div>
       </div>
-      <div class="links">
-        <a href="#servicios">Servicios</a>
-        <a href="#precios">Precios</a>
-        <a href="#contacto">Contacto</a>
+      <nav class="footer-nav" aria-label="Enlaces del pie de página">
+        <div class="footer-section">
+          <h4>Navegación</h4>
+          <ul>
+            <li><a href="#servicios">Servicios</a></li>
+            <li><a href="#embudo">Embudo</a></li>
+            <li><a href="#precios">Precios</a></li>
+            <li><a href="#contacto">Contacto</a></li>
+          </ul>
+        </div>
+        <div class="footer-section">
+          <h4>Legal</h4>
+          <ul>
+            <li><a href="#privacy">Privacidad</a></li>
+            <li><a href="#terms">Términos</a></li>
+          </ul>
+        </div>
+      </nav>
+      
+      <!-- Back to Top -->
+      <button class="back-to-top" aria-label="Volver arriba">↑</button>
       </div>
     </div>
   </footer>
@@ -313,6 +381,9 @@
   <a id="floating-whatsapp" class="floating-wa hide-nojs" href="#" target="_blank" rel="noopener" aria-label="WhatsApp">
     <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#25D366"/><path d="M16.2 13.7c-.2-.1-1.3-.6-1.5-.7-.2-.1-.3-.1-.5.1-.1.2-.6.7-.7.8-.1.1-.3.1-.5 0-.2-.1-1-.4-1.9-1.2-.7-.6-1.2-1.4-1.3-1.6-.1-.2 0-.3.1-.4.1-.1.2-.3.3-.4.1-.1.1-.2.2-.3.1-.1.1-.2.2-.3.1-.1.1-.2.2-.3.1-.1 0-.2 0-.3 0-.1-.5-1.3-.7-1.7-.2-.4-.4-.3-.5-.3h-.4c-.1 0-.3 0-.5.2-.2.2-.7.7-.7 1.7s.7 2 .8 2.1c.1.1 1.4 2.2 3.4 3.1 1.3.6 1.8.6 2.4.5.4-.1 1.3-.5 1.5-1 .2-.5.2-.9.1-1 0-.1-.2-.1-.4-.2z" fill="#fff"/></svg>
   </a>
+
+  <!-- Progress Indicator -->
+  <div class="reading-progress" role="progressbar" aria-label="Progreso de lectura"></div>
 
   <script type="module">
     import { N8N_BASE_URL, ENDPOINTS, CONTACT } from './config.js';
