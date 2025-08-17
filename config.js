@@ -97,7 +97,7 @@ export const MELANO_NEXUS = {
 
 // Configuración para debugging y desarrollo
 export const DEBUG = {
-  enabled: process.env.NODE_ENV !== 'production',
+  enabled: true,
   logLevel: 'info',
   mockN8nResponses: true // Simular respuestas cuando n8n no esté disponible
 };
