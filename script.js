@@ -78,6 +78,9 @@ window.addEventListener('DOMContentLoaded', () => {
   initInvestmentForm();
   initScrollAnimations();
   
+  // Initialize tabs for system demo
+  initSystemTabs();
+  
   // Mostrar WhatsApp flotante después de 3 segundos
   setTimeout(() => {
     const floatingWa = $('#floating-whatsapp');
@@ -86,6 +89,45 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   }, 3000);
 });
+
+/**
+ * System Demo Tabs Handler
+ */
+function initSystemTabs() {
+  const tabButtons = document.querySelectorAll('.tab-btn');
+  const luxiaDemo = document.getElementById('luxia-demo');
+  const notoriusDemo = document.getElementById('notorius-demo');
+  
+  if (!tabButtons.length || !luxiaDemo || !notoriusDemo) return;
+  
+  tabButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetTab = btn.getAttribute('data-tab');
+      
+      // Update active button
+      tabButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      
+      // Show/hide demos with smooth transition
+      if (targetTab === 'luxia') {
+        luxiaDemo.classList.remove('hidden');
+        notoriusDemo.classList.add('hidden');
+      } else if (targetTab === 'notorius') {
+        luxiaDemo.classList.add('hidden');
+        notoriusDemo.classList.remove('hidden');
+      }
+      
+      // Analytics tracking
+      if (typeof gtag !== 'undefined') {
+        gtag('event', 'demo_tab_switch', {
+          event_category: 'Demo Interaction',
+          event_label: targetTab,
+          transport_type: 'beacon'
+        });
+      }
+    });
+  });
+}
 
 /**
  * Investment Form Handler
