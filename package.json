@@ -7,6 +7,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
+    "build": "mkdir -p dist && cp index.html styles.css script.js config.js dist/",
     "test": "node -e \"console.log('No tests')\""
   },
   "dependencies": {
