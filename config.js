@@ -1,8 +1,7 @@
 // MELANO AI™ - Configuración del Sistema
 // Configuración centralizada para el CRM inmobiliario con IA
 
-// Configuración de endpoints y servicios
-window.MELANO_CONFIG = {
+export const MELANO_CONFIG = {
   N8N_BASE_URL: 'https://n8n.brunomelano.com',
   
   ENDPOINTS: {
@@ -13,7 +12,7 @@ window.MELANO_CONFIG = {
   },
 
   CONTACT: {
-    whatsapp: 'https://wa.me/5492235506595?text=Quiero%20una%20demo%20de%20MELANO%20AI',
+    whatsapp: 'https://wa.me/5492235506595?text=Hola%20Bruno!%20Quiero%20una%20demo%20de%20MELANO%20AI',
     phone: '+5492235506595',
     email: 'melanobruno@gmail.com',
     calendly: 'https://calendly.com/melanobruno'
@@ -90,4 +89,6 @@ window.MELANO_CONFIG = {
   }
 };
 
-console.log('✅ MELANO AI™ Config loaded');
+export const N8N_BASE_URL = MELANO_CONFIG.N8N_BASE_URL;
+export const ENDPOINTS = MELANO_CONFIG.ENDPOINTS;
+export const CONTACT = MELANO_CONFIG.CONTACT;

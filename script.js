@@ -1,6 +1,8 @@
 // MELANO AI™ - Sistema Principal
 // JavaScript principal para el CRM inmobiliario con IA
 
+import { MELANO_CONFIG } from './config.js';
+
 // Estado global de la aplicación
 const AppState = {
   isFormSubmitting: false,
@@ -31,16 +33,13 @@ const Utils = {
   validateField(field, value) {
     if (!value || value.trim() === '') return false;
     
-    const config = window.MELANO_CONFIG;
-    if (!config) return false;
-    
     switch (field) {
       case 'email':
-        return config.VALIDATION.email.test(value);
+        return MELANO_CONFIG.VALIDATION.email.test(value);
       case 'phone':
-        return config.VALIDATION.phone.test(value.replace(/\s/g, ''));
+        return MELANO_CONFIG.VALIDATION.phone.test(value.replace(/\s/g, ''));
       case 'name':
-        return config.VALIDATION.name.test(value);
+        return MELANO_CONFIG.VALIDATION.name.test(value);
       default:
         return value.length >= 2;
     }
@@ -68,11 +67,8 @@ const Utils = {
 // Sistema de Lead Scoring
 const LeadScoring = {
   calculateScore(formData) {
-    const config = window.MELANO_CONFIG;
-    if (!config) return 0;
-    
     let score = 0;
-    const factors = config.LEAD_SCORING.factors;
+    const factors = MELANO_CONFIG.LEAD_SCORING.factors;
     
     // Revenue scoring
     if (formData.revenue && factors.revenue[formData.revenue]) {
@@ -103,10 +99,7 @@ const LeadScoring = {
   },
 
   getLeadType(score) {
-    const config = window.MELANO_CONFIG;
-    if (!config) return 'cold';
-    
-    const thresholds = config.LEAD_SCORING.thresholds;
+    const thresholds = MELANO_CONFIG.LEAD_SCORING.thresholds;
     if (score >= thresholds.hot) return 'hot';
     if (score >= thresholds.warm) return 'warm';
     return 'cold';
@@ -142,13 +135,12 @@ const Analytics = {
 // Sistema de Formularios
 const FormSystem = {
   async submitForm(formData) {
-    const config = window.MELANO_CONFIG;
-    if (!config || AppState.isFormSubmitting) return;
+    if (AppState.isFormSubmitting) return;
     
     AppState.isFormSubmitting = true;
     
     try {
-      this.showStatus('loading', config.MESSAGES.loading.form);
+      this.showStatus('loading', MELANO_CONFIG.MESSAGES.loading.form);
       
       const leadScore = LeadScoring.calculateScore(formData);
       const leadType = LeadScoring.getLeadType(leadScore);
@@ -162,7 +154,7 @@ const FormSystem = {
         source: 'melano-ai-landing'
       };
       
-      const response = await fetch(`${config.N8N_BASE_URL}${config.ENDPOINTS.LEAD_CAPTURE}`, {
+      const response = await fetch(`${MELANO_CONFIG.N8N_BASE_URL}${MELANO_CONFIG.ENDPOINTS.LEAD_CAPTURE}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -171,7 +163,7 @@ const FormSystem = {
       });
       
       if (response.ok) {
-        this.showStatus('success', config.MESSAGES.success.form);
+        this.showStatus('success', MELANO_CONFIG.MESSAGES.success.form);
         Analytics.track('form_submit_success', { leadScore, leadType });
         
         setTimeout(() => {
@@ -183,7 +175,7 @@ const FormSystem = {
       
     } catch (error) {
       console.error('Form submission error:', error);
-      this.showStatus('error', config.MESSAGES.error.network);
+      this.showStatus('error', MELANO_CONFIG.MESSAGES.error.network);
       
       setTimeout(() => {
         this.redirectToWhatsApp(formData);
@@ -204,13 +196,10 @@ const FormSystem = {
   },
 
   redirectToWhatsApp(formData) {
-    const config = window.MELANO_CONFIG;
-    if (!config) return;
-    
     const message = `Hola Bruno! Soy ${formData.name} de ${formData.company}. Quiero una demo de MELANO AI. Mi WhatsApp: ${formData.phone}`;
-    const whatsappUrl = `${config.CONTACT.whatsapp}&text=${encodeURIComponent(message)}`;
+    const whatsappUrl = `${MELANO_CONFIG.CONTACT.whatsapp}&text=${encodeURIComponent(message)}`;
     
-    this.showStatus('loading', config.MESSAGES.loading.redirect);
+    this.showStatus('loading', MELANO_CONFIG.MESSAGES.loading.redirect);
     
     setTimeout(() => {
       window.open(whatsappUrl, '_blank');
@@ -289,10 +278,7 @@ const Navigation = {
 const Animations = {
   init() {
     this.setupScrollAnimations();
-    this.initParticles();
-    this.startCountdown();
     this.animateStats();
-    this.animateSpots();
   },
 
   setupScrollAnimations() {
@@ -313,87 +299,6 @@ const Animations = {
       el.style.transition = 'all 300ms ease';
       observer.observe(el);
     });
-  },
-
-  initParticles() {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    const container = document.getElementById('particles-bg');
-    
-    if (!container) return;
-    
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    container.appendChild(canvas);
-    
-    const particles = [];
-    const particleCount = 50;
-    
-    for (let i = 0; i < particleCount; i++) {
-      particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        vx: (Math.random() - 0.5) * 0.5,
-        vy: (Math.random() - 0.5) * 0.5,
-        size: Math.random() * 2 + 1,
-        opacity: Math.random() * 0.5 + 0.1
-      });
-    }
-    
-    function animate() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
-      particles.forEach(particle => {
-        particle.x += particle.vx;
-        particle.y += particle.vy;
-        
-        if (particle.x < 0 || particle.x > canvas.width) particle.vx *= -1;
-        if (particle.y < 0 || particle.y > canvas.height) particle.vy *= -1;
-        
-        ctx.beginPath();
-        ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(91, 43, 196, ${particle.opacity})`;
-        ctx.fill();
-      });
-      
-      requestAnimationFrame(animate);
-    }
-    
-    animate();
-    
-    window.addEventListener('resize', () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    });
-  },
-
-  startCountdown() {
-    const endDate = new Date();
-    endDate.setDate(endDate.getDate() + 7);
-    
-    function updateCountdown() {
-      const now = new Date().getTime();
-      const distance = endDate.getTime() - now;
-      
-      const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-      
-      const daysEl = document.getElementById('days');
-      const hoursEl = document.getElementById('hours');
-      const minutesEl = document.getElementById('minutes');
-      
-      if (daysEl) daysEl.textContent = days.toString().padStart(2, '0');
-      if (hoursEl) hoursEl.textContent = hours.toString().padStart(2, '0');
-      if (minutesEl) minutesEl.textContent = minutes.toString().padStart(2, '0');
-      
-      if (distance < 0) {
-        endDate.setDate(endDate.getDate() + 7);
-      }
-    }
-    
-    updateCountdown();
-    setInterval(updateCountdown, 60000);
   },
 
   animateStats() {
@@ -428,33 +333,12 @@ const Animations = {
       }
       element.textContent = prefix + Math.floor(current) + suffix;
     }, 30);
-  },
-
-  animateSpots() {
-    const spotsEl = document.getElementById('spots-left');
-    if (spotsEl) {
-      let spots = 6;
-      setInterval(() => {
-        if (Math.random() < 0.1) {
-          spots = Math.max(3, spots - 1);
-          spotsEl.textContent = spots;
-        }
-      }, 30000);
-    }
   }
 };
 
 // Inicialización principal
 document.addEventListener('DOMContentLoaded', () => {
   console.log('🚀 MELANO AI™ iniciando...');
-  
-  // Verificar configuración
-  if (!window.MELANO_CONFIG) {
-    console.error('❌ Configuración no cargada');
-    return;
-  }
-  
-  const config = window.MELANO_CONFIG;
   
   // Generar session ID
   AppState.sessionId = Utils.generateId();
@@ -492,7 +376,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Configurar WhatsApp flotante
   const waFloat = document.getElementById('floating-whatsapp');
   if (waFloat) {
-    waFloat.href = config.CONTACT.whatsapp;
+    waFloat.href = MELANO_CONFIG.CONTACT.whatsapp;
     waFloat.classList.remove('hide-nojs');
     
     waFloat.addEventListener('click', () => {
@@ -503,7 +387,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Configurar Calendly
   document.querySelectorAll('.calendly-trigger').forEach(trigger => {
     trigger.addEventListener('click', (e) => {
-      const url = trigger.dataset.calendlyUrl || config.CONTACT.calendly;
+      const url = trigger.dataset.calendlyUrl || MELANO_CONFIG.CONTACT.calendly;
       
       if (url.startsWith('http')) {
         e.preventDefault();
@@ -534,7 +418,7 @@ document.addEventListener('DOMContentLoaded', () => {
     LeadScoring,
     Analytics,
     FormSystem,
-    config
+    MELANO_CONFIG
   };
 });
 

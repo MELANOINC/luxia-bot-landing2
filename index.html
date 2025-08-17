@@ -900,7 +900,6 @@
           if (url.startsWith('http')) {
             e.preventDefault();
             if (window.Calendly && typeof Calendly.initPopupWidget === 'function') {
-              Calendly.initPopupWidget({ url });
             } else {
               window.open(url, '_blank', 'noopener');
             }
@@ -957,7 +956,5 @@
     // Partículas de fondo
     function initParticles() {
       const canvas = document.createElement('canvas');
-  <script src="./config.js"></script>
-  <script src="./script.js"></script>
 </body>
 </html>
