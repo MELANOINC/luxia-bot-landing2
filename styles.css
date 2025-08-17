@@ -972,6 +972,19 @@ h1{
     grid-template-columns: 1fr;
   }
 
+  .demo-content {
+    grid-template-columns: 1fr;
+  }
+
+  .demo-sidebar {
+    border-right: none;
+    border-bottom: 1px solid rgba(196,155,69,.2);
+  }
+
+  .demo-stats {
+    grid-template-columns: 1fr;
+  }
+
   .urgency-banner {
     font-size: 12px;
     padding: 10px 16px;
