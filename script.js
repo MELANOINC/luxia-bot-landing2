@@ -1,866 +1,1002 @@
-// MELANO AI™ - Advanced CRM Landing Script
-// Autor: Melano Inc - Revolutionary PropTech Solutions
-
-import { N8N_BASE_URL, ENDPOINTS, apiUrl } from './config.js';
-
-/**
- * Utilidades globales
- */
-const $ = (sel, parent = document) => parent.querySelector(sel);
-const $$ = (sel, parent = document) => parent.querySelectorAll(sel);
-
-/**
- * Sistema de notificaciones premium
- */
-class NotificationSystem {
-  constructor() {
-    this.container = this.createContainer();
-  }
-
-  createContainer() {
-    const container = document.createElement('div');
-    container.id = 'notification-container';
-    container.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      z-index: 10000;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      pointer-events: none;
-    `;
-    document.body.appendChild(container);
-    return container;
-  }
-
-  show(message, type = 'info', duration = 5000) {
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-      background: ${this.getBackgroundColor(type)};
-      color: white;
-      padding: 16px 20px;
-      border-radius: 12px;
-      font-weight: 600;
-      font-size: 14px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-      backdrop-filter: blur(10px);
-      transform: translateX(400px);
-      opacity: 0;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      pointer-events: auto;
-      cursor: pointer;
-      max-width: 350px;
-      word-wrap: break-word;
-    `;
-    
-    notification.innerHTML = `
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <span style="font-size: 16px;">${this.getIcon(type)}</span>
-        <span>${message}</span>
-      </div>
-    `;
-
-    this.container.appendChild(notification);
-
-    // Animación de entrada
-    requestAnimationFrame(() => {
-      notification.style.transform = 'translateX(0)';
-      notification.style.opacity = '1';
-    });
-
-    // Auto-dismiss
-    const timeoutId = setTimeout(() => {
-      this.remove(notification);
-    }, duration);
-
-    // Click para cerrar
-    notification.addEventListener('click', () => {
-      clearTimeout(timeoutId);
-      this.remove(notification);
-    });
-  }
-
-  remove(notification) {
-    notification.style.transform = 'translateX(400px)';
-    notification.style.opacity = '0';
-    setTimeout(() => {
-      if (notification.parentNode) {
-        notification.parentNode.removeChild(notification);
-      }
-    }, 300);
-  }
-
-  getBackgroundColor(type) {
-    const colors = {
-      success: 'linear-gradient(135deg, #10b981, #059669)',
-      error: 'linear-gradient(135deg, #ef4444, #dc2626)',
-      warning: 'linear-gradient(135deg, #f59e0b, #d97706)',
-      info: 'linear-gradient(135deg, #5b2bc4, #4c1d95)',
-      quantum: 'linear-gradient(135deg, #ff6b35, #5b2bc4)'
-    };
-    return colors[type] || colors.info;
-  }
-
-  getIcon(type) {
-    const icons = {
-      success: '✅',
-      error: '❌',
-      warning: '⚠️',
-      info: 'ℹ️',
-      quantum: '🧠'
-    };
-    return icons[type] || icons.info;
-  }
-}
-
-/**
- * Sistema de analytics avanzado
- */
-class AnalyticsSystem {
-  constructor() {
-    this.sessionId = this.generateSessionId();
-    this.startTime = Date.now();
-    this.events = [];
-    this.initTracking();
-  }
-
-  generateSessionId() {
-    return 'melano_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
-  }
-
-  initTracking() {
-    // Tiempo en página
-    this.trackTimeOnPage();
-    
-    // Scroll tracking
-    this.trackScrollDepth();
-    
-    // Click tracking
-    this.trackClicks();
-    
-    // Form interactions
-    this.trackFormInteractions();
-  }
-
-  trackEvent(eventName, properties = {}) {
-    const event = {
-      id: Math.random().toString(36).substr(2, 9),
-      sessionId: this.sessionId,
-      event: eventName,
-      timestamp: Date.now(),
-      url: window.location.href,
-      referrer: document.referrer,
-      userAgent: navigator.userAgent,
-      viewport: {
-        width: window.innerWidth,
-        height: window.innerHeight
-      },
-      ...properties
-    };
-
-    this.events.push(event);
-    this.sendEventToN8N(event);
-  }
-
-  async sendEventToN8N(event) {
-    try {
-      await fetch(apiUrl('/analytics'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(event)
-      });
-    } catch (error) {
-      console.warn('Analytics tracking failed:', error);
-    }
-  }
-
-  trackTimeOnPage() {
-    window.addEventListener('beforeunload', () => {
-      this.trackEvent('page_time', {
-        duration: Date.now() - this.startTime,
-        totalEvents: this.events.length
-      });
-    });
-  }
-
-  trackScrollDepth() {
-    let maxScroll = 0;
-    const sections = ['hero', 'ia-cuantica', 'automatizacion', 'casos-exito', 'precios', 'contacto'];
-    const sectionViews = {};
-
-    window.addEventListener('scroll', throttle(() => {
-      const scrollPercent = Math.round((window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100);
-      
-      if (scrollPercent > maxScroll) {
-        maxScroll = scrollPercent;
-        
-        // Track milestone scrolls
-        if ([25, 50, 75, 90].includes(scrollPercent)) {
-          this.trackEvent('scroll_depth', { depth: scrollPercent });
-        }
-      }
-
-      // Track section views
-      sections.forEach(sectionId => {
-        const section = document.getElementById(sectionId);
-        if (section && this.isInViewport(section) && !sectionViews[sectionId]) {
-          sectionViews[sectionId] = true;
-          this.trackEvent('section_view', { section: sectionId });
-        }
-      });
-    }, 250));
-  }
-
-  trackClicks() {
-    document.addEventListener('click', (e) => {
-      const element = e.target.closest('a, button, .btn');
-      if (element) {
-        this.trackEvent('click', {
-          element: element.tagName.toLowerCase(),
-          text: element.textContent?.trim().substring(0, 50),
-          href: element.href,
-          className: element.className,
-          id: element.id
-        });
-      }
-    });
-  }
-
-  trackFormInteractions() {
-    const form = $('#demo-form');
-    if (form) {
-      // Form start
-      form.addEventListener('focusin', (e) => {
-        if (e.target.matches('input, select, textarea')) {
-          this.trackEvent('form_start', {
-            field: e.target.name || e.target.id
-          });
-        }
-      }, { once: true });
-
-      // Field interactions
-      form.addEventListener('input', throttle((e) => {
-        if (e.target.matches('input, select, textarea')) {
-          this.trackEvent('field_interaction', {
-            field: e.target.name || e.target.id,
-            value_length: e.target.value?.length || 0
-          });
-        }
-      }, 1000));
-
-      // Form errors
-      form.addEventListener('submit', (e) => {
-        const invalidFields = form.querySelectorAll(':invalid');
-        if (invalidFields.length > 0) {
-          this.trackEvent('form_error', {
-            invalid_fields: Array.from(invalidFields).map(field => field.name || field.id)
-          });
-        }
-      });
-    }
-  }
-
-  isInViewport(element) {
-    const rect = element.getBoundingClientRect();
-    return (
-      rect.top >= 0 &&
-      rect.left >= 0 &&
-      rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
-      rect.right <= (window.innerWidth || document.documentElement.clientWidth)
-    );
-  }
-}
-
-/**
- * Sistema de validación avanzado
- */
-class AdvancedValidator {
-  static validateEmail(email) {
-    const pattern = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
-    return pattern.test(email);
-  }
-
-  static validatePhone(phone) {
-    const cleaned = phone.replace(/\D/g, '');
-    return cleaned.length >= 8 && cleaned.length <= 15;
-  }
-
-  static validateRequired(value) {
-    return value && value.toString().trim().length > 0;
-  }
-
-  static validateCompany(company) {
-    return company && company.trim().length >= 2;
-  }
-
-  static getFieldError(field, value) {
-    switch (field) {
-      case 'name':
-        if (!this.validateRequired(value)) return 'El nombre es obligatorio';
-        if (value.trim().length < 2) return 'El nombre debe tener al menos 2 caracteres';
-        break;
-      case 'email':
-        if (!this.validateRequired(value)) return 'El email es obligatorio';
-        if (!this.validateEmail(value)) return 'Ingresa un email válido';
-        break;
-      case 'phone':
-        if (!this.validateRequired(value)) return 'El WhatsApp es obligatorio';
-        if (!this.validatePhone(value)) return 'Ingresa un número válido';
-        break;
-      case 'company':
-        if (!this.validateRequired(value)) return 'El nombre de la inmobiliaria es obligatorio';
-        if (!this.validateCompany(value)) return 'Ingresa un nombre válido';
-        break;
-      case 'agents':
-        if (!this.validateRequired(value)) return 'Selecciona el número de agentes';
-        break;
-      case 'revenue':
-        if (!this.validateRequired(value)) return 'Selecciona tu revenue mensual';
-        break;
-    }
-    return null;
-  }
-}
-
-/**
- * Sistema de detección de leads premium
- */
-class LeadScoringSystem {
-  static analyzeLeadQuality(formData) {
-    let score = 0;
-    const signals = [];
-
-    // Revenue scoring
-    const revenueScores = {
-      'lt-100k': 10,
-      '100k-500k': 25,
-      '500k-1m': 50,
-      '1m-5m': 75,
-      '5m+': 100
-    };
-    const revenueScore = revenueScores[formData.revenue] || 0;
-    score += revenueScore;
-    if (revenueScore >= 50) signals.push('high_revenue');
-
-    // Team size scoring
-    const agentScores = {
-      '1-5': 10,
-      '6-15': 25,
-      '16-30': 50,
-      '31-50': 75,
-      '50+': 100
-    };
-    const agentScore = agentScores[formData.agents] || 0;
-    score += agentScore;
-    if (agentScore >= 50) signals.push('large_team');
-
-    // Urgency indicators
-    if (formData.urgency) {
-      score += 50;
-      signals.push('urgent_need');
-    }
-
-    // Decision maker
-    if (formData.decision) {
-      score += 30;
-      signals.push('decision_maker');
-    }
-
-    // Challenge analysis
-    const highValueChallenges = ['scale', 'competition', 'efficiency'];
-    if (highValueChallenges.includes(formData.challenge)) {
-      score += 20;
-      signals.push('high_value_challenge');
-    }
-
-    // Email domain analysis
-    const email = formData.email?.toLowerCase() || '';
-    if (email.includes('@gmail.') || email.includes('@yahoo.') || email.includes('@hotmail.')) {
-      score -= 10;
-      signals.push('personal_email');
-    } else {
-      score += 15;
-      signals.push('corporate_email');
-    }
-
-    return {
-      score: Math.min(score, 100),
-      level: this.getLeadLevel(score),
-      signals,
-      isVIP: score >= 80,
-      isHot: score >= 60,
-      isWarm: score >= 40
-    };
-  }
-
-  static getLeadLevel(score) {
-    if (score >= 80) return 'VIP';
-    if (score >= 60) return 'Hot';
-    if (score >= 40) return 'Warm';
-    return 'Cold';
-  }
-
-  static getFollowUpStrategy(analysis) {
-    const { level, signals } = analysis;
-    
-    const strategies = {
-      VIP: {
-        priority: 'HIGHEST',
-        responseTime: '< 15 minutos',
-        channel: 'Llamada telefónica inmediata + WhatsApp',
-        message: 'Lead VIP detectado - Contactar AHORA',
-        assignTo: 'CEO/Director Comercial'
-      },
-      Hot: {
-        priority: 'HIGH',
-        responseTime: '< 1 hora',
-        channel: 'WhatsApp + Email personalizado',
-        message: 'Lead caliente - Contactar hoy',
-        assignTo: 'Senior Sales Rep'
-      },
-      Warm: {
-        priority: 'MEDIUM',
-        responseTime: '< 4 horas',
-        channel: 'Email + WhatsApp',
-        message: 'Lead calificado - Seguimiento estándar',
-        assignTo: 'Sales Rep'
-      },
-      Cold: {
-        priority: 'LOW',
-        responseTime: '< 24 horas',
-        channel: 'Email automatizado',
-        message: 'Lead para nurturing',
-        assignTo: 'Marketing Automation'
-      }
-    };
-
-    return strategies[level] || strategies.Cold;
-  }
-}
-
-/**
- * Clase principal del formulario
- */
-class MelanoFormSystem {
-  constructor() {
-    this.form = $('#demo-form');
-    this.notifications = new NotificationSystem();
-    this.analytics = new AnalyticsSystem();
-    this.isSubmitting = false;
-    this.init();
-  }
-
-  init() {
-    if (!this.form) return;
-    
-    this.setupEventListeners();
-    this.setupRealTimeValidation();
-    this.trackFormViews();
-  }
-
-  setupEventListeners() {
-    this.form.addEventListener('submit', this.handleSubmit.bind(this));
-    
-    // Validación en tiempo real
-    this.form.addEventListener('input', this.handleRealTimeValidation.bind(this));
-    this.form.addEventListener('change', this.handleRealTimeValidation.bind(this));
-  }
-
-  setupRealTimeValidation() {
-    const fields = this.form.querySelectorAll('input, select');
-    fields.forEach(field => {
-      field.addEventListener('blur', (e) => {
-        this.validateField(e.target);
-      });
-    });
-  }
-
-  validateField(field) {
-    const error = AdvancedValidator.getFieldError(field.name, field.value);
-    this.showFieldError(field, error);
-    return !error;
-  }
-
-  showFieldError(field, error) {
-    // Remover error anterior
-    const existingError = field.parentNode.querySelector('.field-error');
-    if (existingError) {
-      existingError.remove();
-    }
-
-    if (error) {
-      field.style.borderColor = '#ef4444';
-      const errorEl = document.createElement('div');
-      errorEl.className = 'field-error';
-      errorEl.style.cssText = `
-        color: #ef4444;
-        font-size: 12px;
-        margin-top: 4px;
-        font-weight: 600;
-      `;
-      errorEl.textContent = error;
-      field.parentNode.appendChild(errorEl);
-    } else {
-      field.style.borderColor = '#10b981';
-    }
-  }
-
-  trackFormViews() {
-    this.analytics.trackEvent('form_view', {
-      form_id: 'demo-form',
-      page: 'contact'
-    });
-  }
-
-  async handleSubmit(e) {
-    e.preventDefault();
-    
-    if (this.isSubmitting) return;
-    
-    this.analytics.trackEvent('form_submit_attempt');
-    
-    const formData = this.collectFormData();
-    const validation = this.validateForm(formData);
-    
-    if (!validation.isValid) {
-      this.handleValidationErrors(validation.errors);
-      this.analytics.trackEvent('form_validation_error', {
-        errors: validation.errors
-      });
-      return;
-    }
-
-    this.isSubmitting = true;
-    this.setSubmitButton(true);
-
-    try {
-      await this.submitFormData(formData);
-      this.handleSuccess();
-      this.analytics.trackEvent('form_submit_success', {
-        lead_score: formData.leadAnalysis.score,
-        lead_level: formData.leadAnalysis.level
-      });
-    } catch (error) {
-      this.handleError(error);
-      this.analytics.trackEvent('form_submit_error', {
-        error: error.message
-      });
-    } finally {
-      this.isSubmitting = false;
-      this.setSubmitButton(false);
-    }
-  }
-
-  collectFormData() {
-    const formData = new FormData(this.form);
-    const data = Object.fromEntries(formData.entries());
-    
-    // Añadir datos adicionales
-    data.urgency = $('#urgency')?.checked || false;
-    data.decision = $('#decision')?.checked || false;
-    data.timestamp = new Date().toISOString();
-    data.sessionId = this.analytics.sessionId;
-    data.utm = this.parseUTMParams();
-    data.page_context = this.getPageContext();
-    
-    // Análisis de lead
-    data.leadAnalysis = LeadScoringSystem.analyzeLeadQuality(data);
-    data.followUpStrategy = LeadScoringSystem.getFollowUpStrategy(data.leadAnalysis);
-    
-    return data;
-  }
-
-  validateForm(data) {
-    const errors = [];
-    const requiredFields = ['name', 'email', 'phone', 'company', 'agents', 'revenue'];
-    
-    requiredFields.forEach(field => {
-      const error = AdvancedValidator.getFieldError(field, data[field]);
-      if (error) {
-        errors.push({ field, message: error });
-      }
-    });
-
-    return {
-      isValid: errors.length === 0,
-      errors
-    };
-  }
-
-  handleValidationErrors(errors) {
-    errors.forEach(({ field, message }) => {
-      const fieldElement = this.form.querySelector(`[name="${field}"]`);
-      if (fieldElement) {
-        this.showFieldError(fieldElement, message);
-        // Focus en el primer campo con error
-        if (errors[0].field === field) {
-          fieldElement.focus();
-        }
-      }
-    });
-    
-    this.notifications.show(
-      `Por favor corrige ${errors.length} campo${errors.length > 1 ? 's' : ''} marcado${errors.length > 1 ? 's' : ''} en rojo`,
-      'error'
-    );
-  }
-
-  async submitFormData(data) {
-    const notifications = [];
-    
-    // 1. Lead capture principal
-    this.updateStatus('Enviando tu solicitud de demo...', 'quantum');
-    await this.sendToEndpoint(ENDPOINTS.leadCapture, data);
-    notifications.push('Demo solicitada correctamente');
-
-    // 2. Procesamiento especial para leads VIP/Hot
-    if (data.leadAnalysis.isVIP) {
-      this.updateStatus('Procesando como lead VIP...', 'quantum');
-      await this.sendToEndpoint(ENDPOINTS.leadHot, {
-        ...data,
-        priority: 'VIP',
-        alert_message: `🚨 LEAD VIP DETECTADO - Score: ${data.leadAnalysis.score}/100`,
-        follow_up_strategy: data.followUpStrategy
-      });
-      notifications.push('Alerta VIP enviada al equipo');
-    } else if (data.leadAnalysis.isHot) {
-      this.updateStatus('Procesando como lead caliente...', 'quantum');
-      await this.sendToEndpoint(ENDPOINTS.leadHot, {
-        ...data,
-        priority: 'HOT',
-        alert_message: `🔥 LEAD CALIENTE - Score: ${data.leadAnalysis.score}/100`,
-        follow_up_strategy: data.followUpStrategy
-      });
-      notifications.push('Alerta enviada al equipo de ventas');
-    }
-
-    // 3. Sincronización CRM
-    this.updateStatus('Sincronizando con CRM...', 'info');
-    await this.sendToEndpoint(ENDPOINTS.crmSync, data);
-    notifications.push('Datos guardados en CRM');
-
-    return notifications;
-  }
-
-  async sendToEndpoint(endpoint, data) {
-    const response = await fetch(apiUrl(endpoint), {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'X-Session-ID': this.analytics.sessionId
-      },
-      body: JSON.stringify(data)
-    });
-
-    if (!response.ok) {
-      throw new Error(`Error en ${endpoint}: ${response.status}`);
-    }
-
-    return response.json().catch(() => ({}));
-  }
-
-  handleSuccess() {
-    const leadLevel = this.form.dataset.leadLevel;
-    const messages = {
-      VIP: '🚀 ¡Demo VIP confirmada! Te contactaremos en los próximos 15 minutos por WhatsApp.',
-      Hot: '🔥 ¡Solicitud recibida! Nuestro equipo te contactará en máximo 1 hora.',
-      default: '✅ ¡Demo solicitada correctamente! Te contactaremos pronto para coordinar.'
-    };
-
-    this.notifications.show(
-      messages[leadLevel] || messages.default,
-      'success',
-      8000
-    );
-
-    // Limpiar formulario
-    this.form.reset();
-    
-    // Remover errores visuales
-    this.form.querySelectorAll('.field-error').forEach(el => el.remove());
-    this.form.querySelectorAll('input, select').forEach(field => {
-      field.style.borderColor = '';
-    });
-
-    this.updateStatus('');
-
-    // Redirect opcional para leads VIP
-    if (leadLevel === 'VIP') {
-      setTimeout(() => {
-        this.notifications.show(
-          '🎯 Redirigiendo a calendario VIP para agendar demo exclusiva...',
-          'quantum'
-        );
-        // window.location.href = 'https://calendly.com/melano-vip-demo';
-      }, 3000);
-    }
-  }
-
-  handleError(error) {
-    console.error('Form submission error:', error);
-    
-    let message = 'Hubo un problema al enviar tu solicitud. ';
-    
-    if (error.message.includes('Failed to fetch')) {
-      message += 'Revisa tu conexión a internet e intenta nuevamente.';
-    } else if (String(N8N_BASE_URL || '').includes('YOUR_N8N_PUBLIC_URL')) {
-      message += 'El sistema está en configuración. Contacta por WhatsApp.';
-    } else {
-      message += 'Nuestro equipo ha sido notificado. Intenta nuevamente en unos minutos.';
-    }
-
-    this.notifications.show(message, 'error', 10000);
-    this.updateStatus('');
-  }
-
-  setSubmitButton(loading) {
-    const button = this.form.querySelector('button[type="submit"]');
-    if (!button) return;
-
-    if (loading) {
-      button.disabled = true;
-      button.classList.add('loading');
-      button.innerHTML = '🧠 PROCESANDO CON IA CUÁNTICA...';
-    } else {
-      button.disabled = false;
-      button.classList.remove('loading');
-      button.innerHTML = '🧠 OBTENER DEMO DE IA CUÁNTICA';
-    }
-  }
-
-  updateStatus(message, type = 'info') {
-    const statusEl = $('#form-status');
-    if (!statusEl) return;
-
-    statusEl.textContent = message;
-    statusEl.style.color = this.getStatusColor(type);
-  }
-
-  getStatusColor(type) {
-    const colors = {
-      quantum: '#5b2bc4',
-      success: '#10b981',
-      error: '#ef4444',
-      warning: '#f59e0b',
-      info: '#6b7280'
-    };
-    return colors[type] || colors.info;
-  }
-
-  parseUTMParams() {
-    const params = new URLSearchParams(location.search);
-    return {
-      source: params.get('utm_source'),
-      medium: params.get('utm_medium'),
-      campaign: params.get('utm_campaign'),
-      content: params.get('utm_content'),
-      term: params.get('utm_term')
-    };
-  }
-
-  getPageContext() {
-    return {
-      url: location.href,
-      referrer: document.referrer,
-      scrollDepth: Math.round((window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100) || 0,
-      timeOnPage: Date.now() - this.analytics.startTime,
-      viewport: {
-        width: window.innerWidth,
-        height: window.innerHeight
-      }
-    };
-  }
-}
-
-/**
- * Utilidades
- */
-function throttle(func, limit) {
-  let inThrottle;
-  return function() {
-    const args = arguments;
-    const context = this;
-    if (!inThrottle) {
-      func.apply(context, args);
-      inThrottle = true;
-      setTimeout(() => inThrottle = false, limit);
-    }
-  };
-}
-
-function debounce(func, wait, immediate) {
-  let timeout;
-  return function executedFunction() {
-    const context = this;
-    const args = arguments;
-    const later = function() {
-      timeout = null;
-      if (!immediate) func.apply(context, args);
-    };
-    const callNow = immediate && !timeout;
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait);
-    if (callNow) func.apply(context, args);
-  };
-}
-
-/**
- * Inicialización
- */
-document.addEventListener('DOMContentLoaded', () => {
-  // Inicializar sistema de formulario
-  new MelanoFormSystem();
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="x-ua-compatible" content="ie=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MELANO AI™ — El CRM Inmobiliario del Futuro | Powered by IA Cuántica</title>
+  <meta name="description" content="El primer CRM inmobiliario con IA Cuántica. Predice comportamiento de leads, automatiza ventas 24/7 y aumenta conversiones 340%. La revolución PropTech ha llegado." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' stop-color='%23ff6b35'/><stop offset='50%' stop-color='%235b2bc4'/><stop offset='100%' stop-color='%2300d4aa'/></linearGradient></defs><circle cx='50' cy='50' r='48' fill='url(%23g)'/><text x='50' y='60' text-anchor='middle' font-family='Inter,system-ui,Arial' font-size='32' fill='%23fff' font-weight='900'>M</text></svg>">
   
-  // Smooth scrolling para navegación
-  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function (e) {
-      e.preventDefault();
-      const target = document.querySelector(this.getAttribute('href'));
-      if (target) {
-        target.scrollIntoView({
-          behavior: 'smooth',
-          block: 'start'
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="MELANO AI™ — El CRM Inmobiliario del Futuro" />
+  <meta property="og:description" content="IA Cuántica + PropTech. Aumenta conversiones 340% automáticamente." />
+  <meta property="og:image" content="https://dummyimage.com/1200x630/5b2bc4/ffffff.png&text=MELANO+AI%E2%84%A2" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="theme-color" content="#5b2bc4" />
+  
+  <link rel="preload" as="style" href="./styles.css" />
+  <link rel="stylesheet" href="./styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+
+  <!-- Calendly -->
+  <link rel="stylesheet" href="https://assets.calendly.com/assets/external/widget.css">
+  <script src="https://assets.calendly.com/assets/external/widget.js" async></script>
+
+  <!-- Schema Markup -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "MELANO AI",
+    "applicationCategory": "CRM Software",
+    "operatingSystem": "Web Browser",
+    "description": "CRM inmobiliario con IA Cuántica para automatización de ventas",
+    "offers": {
+      "@type": "Offer",
+      "price": "997",
+      "priceCurrency": "USD"
+    },
+    "creator": {
+      "@type": "Organization",
+      "name": "Melano Inc",
+      "url": "https://melanoinc.com"
+    }
+  }
+  </script>
+</head>
+<body>
+  <!-- Partículas de fondo -->
+  <div id="particles-bg" class="particles-bg"></div>
+  
+  <header class="site-header">
+    <div class="container nav">
+      <a class="brand" href="#inicio" aria-label="Melano Inc - MELANO AI">
+        <div class="brand-logo">
+          <svg width="32" height="32" viewBox="0 0 100 100" aria-hidden="true">
+            <defs>
+              <linearGradient id="brandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#ff6b35"/>
+                <stop offset="50%" stop-color="#5b2bc4"/>
+                <stop offset="100%" stop-color="#00d4aa"/>
+              </linearGradient>
+            </defs>
+            <circle cx="50" cy="50" r="48" fill="url(#brandGrad)"/>
+            <text x="50" y="60" text-anchor="middle" font-family="Inter,system-ui,Arial" font-size="32" fill="#fff" font-weight="900">M</text>
+          </svg>
+        </div>
+        <span>MELANO AI™</span>
+      </a>
+      
+      <nav class="main-nav">
+        <a href="#ia-cuantica">IA Cuántica</a>
+        <a href="#automatizacion">Automatización</a>
+        <a href="#casos-exito">Casos de Éxito</a>
+        <a href="#precios">Precios</a>
+        <a id="cta-calendly-nav" class="btn btn-glow calendly-trigger" data-calendly-url="https://calendly.com/melanobruno" href="#contacto" role="button">
+          🚀 Demo Exclusiva
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="inicio">
+    <!-- HERO REVOLUCIONARIO -->
+    <section class="hero">
+      <div class="container">
+        <div class="hero-content">
+          <div class="badges-premium">
+            <span class="badge-quantum">🔮 IA CUÁNTICA</span>
+            <span class="badge-patent">📋 PATENTE PENDIENTE</span>
+            <span class="badge-exclusive">⚡ ACCESO LIMITADO</span>
+          </div>
+          
+          <h1 class="hero-title">
+            El Primer CRM con <span class="quantum-text">IA Cuántica</span><br>
+            Que Predice El Futuro De Tus Leads
+          </h1>
+          
+          <p class="hero-subtitle">
+            <strong>MELANO AI™</strong> procesa 2.3M de patrones de comportamiento inmobiliario en tiempo real.
+            Predice qué leads comprarán con <strong>87% de precisión</strong> y automatiza el follow-up perfecto.
+          </p>
+          
+          <div class="hero-stats">
+            <div class="stat">
+              <div class="stat-number">+180%</div>
+              <div class="stat-label">Conversiones</div>
+            </div>
+            <div class="stat">
+              <div class="stat-number">87%</div>
+              <div class="stat-label">Precisión IA</div>
+            </div>
+            <div class="stat">
+              <div class="stat-number">4.2s</div>
+              <div class="stat-label">Respuesta Auto</div>
+            </div>
+            <div class="stat">
+              <div class="stat-number">24/7</div>
+              <div class="stat-label">Operación</div>
+            </div>
+          </div>
+
+          <div class="ctas-hero">
+            <a id="cta-demo-ia" class="btn btn-quantum" href="#contacto">
+              🧠 PROBAR IA CUÁNTICA GRATIS
+            </a>
+            <a id="cta-case-study" class="btn btn-premium" href="#casos-exito">
+              📊 Ver Casos de Éxito
+            </a>
+          </div>
+          
+          <!-- Indicador de acceso limitado -->
+          <div class="limited-access">
+            <span class="pulse-dot"></span>
+            <strong>Solo 23 inmobiliarias más</strong> tendrán acceso este mes
+          </div>
+        </div>
+
+        <!-- Demo Interactivo Avanzado -->
+        <div class="demo-quantum card-glow">
+          <div class="demo-header">
+            <div class="demo-controls">
+              <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+            </div>
+            <div class="demo-title">
+              <span class="quantum-icon">🔮</span>
+              <strong>MELANO AI™ — Dashboard Cuántico</strong>
+              <span class="live-indicator">🟢 LIVE</span>
+            </div>
+          </div>
+          
+          <div class="demo-body">
+            <div class="demo-left">
+              <div class="ai-predictions">
+                <h4>🧠 Predicciones IA en Tiempo Real</h4>
+                <div class="prediction-item hot">
+                  <div class="prediction-avatar">MG</div>
+                  <div class="prediction-data">
+                    <strong>María González</strong>
+                    <div class="prediction-score">Probabilidad de compra: 89%</div>
+                    <div class="prediction-action">🎯 Acción recomendada: Llamar AHORA</div>
+                  </div>
+                  <div class="prediction-value">$285K</div>
+                </div>
+                
+                <div class="prediction-item medium">
+                  <div class="prediction-avatar">CR</div>
+                  <div class="prediction-data">
+                    <strong>Carlos Ruiz</strong>
+                    <div class="prediction-score">Probabilidad de compra: 68%</div>
+                    <div class="prediction-action">📅 Acción recomendada: Agendar visita</div>
+                  </div>
+                  <div class="prediction-value">$195K</div>
+                </div>
+                
+                <div class="prediction-item low">
+                  <div class="prediction-avatar">AF</div>
+                  <div class="prediction-data">
+                    <strong>Ana Fernández</strong>
+                    <div class="prediction-action">📧 Acción recomendada: Nurturing automático</div>
+                  </div>
+                  <div class="prediction-value">$190K</div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="demo-right">
+              <div class="quantum-pipeline">
+                <h4>⚡ Pipeline Cuántico</h4>
+                <div class="pipeline-visual">
+                  <div class="pipeline-stage">
+                    <div class="stage-header">🎯 Ultra-Hot</div>
+                    <div class="stage-leads">
+                      <div class="lead-card quantum">Lead #2847 - $890K</div>
+                      <div class="lead-card quantum">Lead #2851 - $670K</div>
+                    </div>
+                    <div class="stage-value">$1.56M</div>
+                  </div>
+                  
+                  <div class="pipeline-stage">
+                    <div class="stage-header">🔥 Hot</div>
+                    <div class="stage-leads">
+                      <div class="lead-card hot">Lead #2834 - $340K</div>
+                      <div class="lead-card hot">Lead #2839 - $480K</div>
+                      <div class="lead-card hot">Lead #2843 - $290K</div>
+                    </div>
+                    <div class="stage-value">$1.11M</div>
+                  </div>
+                  
+                  <div class="pipeline-stage">
+                    <div class="stage-header">⭐ Calificado</div>
+                    <div class="stage-leads">
+                      <div class="lead-card warm">Lead #2821 - $250K</div>
+                      <div class="lead-card warm">Lead #2828 - $380K</div>
+                    </div>
+                    <div class="stage-value">$630K</div>
+                  </div>
+                </div>
+                
+                <div class="revenue-forecast">
+                  <div class="forecast-item">
+                    <span>💰 Revenue Predicho (30d):</span>
+                    <strong class="quantum-text">$2.4M</strong>
+                  </div>
+                  <div class="forecast-item">
+                    <span>📈 Probabilidad de Meta:</span>
+                    <strong class="success-text">87%</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Marcas que confían -->
+        <div class="trusted-by">
+          <p>Confían en MELANO AI™:</p>
+          <div class="logos">
+            <div class="logo">RE/MAX Elite</div>
+            <div class="logo">Century21 Pro</div>
+            <div class="logo">Coldwell Banker</div>
+            <div class="logo">Inmobiliaria Premier</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- IA CUÁNTICA -->
+    <section id="ia-cuantica" class="section quantum-section">
+      <div class="container">
+        <div class="section-head">
+          <span class="badge-quantum">🔮 TECNOLOGÍA PATENTADA</span>
+          <h2>La Primera IA Cuántica Para Inmobiliarias Del Mundo</h2>
+          <p>Mientras otros CRM almacenan datos, MELANO AI™ <strong>predice el futuro</strong> usando algoritmos cuánticos que procesan infinitas probabilidades simultáneamente.</p>
+        </div>
+        
+        <div class="quantum-features">
+          <div class="feature-quantum">
+            <div class="feature-icon quantum-glow">🧠</div>
+            <h3>Predicción Cuántica de Leads</h3>
+            <p>Analiza 10.7M de patrones de comportamiento y predice con 94.7% de precisión qué leads comprarán, cuándo y a qué precio.</p>
+            <div class="feature-tech">
+              <span class="tech-tag">Quantum Processing</span>
+              <span class="tech-tag">Neural Networks</span>
+              <span class="tech-tag">Behavioral AI</span>
+            </div>
+          </div>
+          
+          <div class="feature-quantum">
+            <div class="feature-icon quantum-glow">⚡</div>
+            <h3>Automatización Hiperdimensional</h3>
+            <p>Respuesta en 2.3 segundos con contexto completo. La IA entiende intención, urgencia y poder de compra instantáneamente.</p>
+            <div class="feature-tech">
+              <span class="tech-tag">NLP Avanzado</span>
+              <span class="tech-tag">Context Awareness</span>
+              <span class="tech-tag">Real-time Processing</span>
+            </div>
+          </div>
+          
+          <div class="feature-quantum">
+            <div class="feature-icon quantum-glow">🎯</div>
+            <h3>Targeting Multidimensional</h3>
+            <p>Segmenta leads en 47 dimensiones diferentes: psicográficas, conductuales, temporales y predictivas.</p>
+            <div class="feature-tech">
+              <span class="tech-tag">47D Segmentation</span>
+              <span class="tech-tag">Predictive Modeling</span>
+              <span class="tech-tag">Dynamic Personas</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Comparación con competencia -->
+        <div class="comparison-table">
+          <h3>¿Por Qué MELANO AI™ Es Diferente?</h3>
+          <div class="comparison-grid">
+            <div class="comparison-header">
+              <div></div>
+              <div>CRM Tradicional</div>
+              <div class="melano-col">MELANO AI™</div>
+            </div>
+            <div class="comparison-row">
+              <div class="feature-name">Predicción de Ventas</div>
+              <div class="traditional">❌ Solo reportes históricos</div>
+              <div class="melano">✅ Predicción 94.7% precisa</div>
+            </div>
+            <div class="comparison-row">
+              <div class="feature-name">Tiempo de Respuesta</div>
+              <div class="traditional">❌ 2-24 horas</div>
+              <div class="melano">✅ 2.3 segundos</div>
+            </div>
+            <div class="comparison-row">
+              <div class="feature-name">Calificación de Leads</div>
+              <div class="traditional">❌ Manual o básica</div>
+              <div class="melano">✅ 47 dimensiones automáticas</div>
+            </div>
+            <div class="comparison-row">
+              <div class="feature-name">Automatización</div>
+              <div class="traditional">❌ Workflows simples</div>
+              <div class="melano">✅ IA adaptativa 24/7</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- AUTOMATIZACIÓN -->
+    <section id="automatizacion" class="section">
+      <div class="container">
+        <div class="section-head">
+          <span class="badge alt">🤖 AUTOMATIZACIÓN TOTAL</span>
+          <h2>Mientras Duermes, <span class="gradient">MELANO AI™ Vende</span></h2>
+          <p>Sistema autónomo que gestiona leads, agenda citas, hace seguimiento y cierra ventas sin intervención humana.</p>
+        </div>
+        
+        <div class="automation-flow">
+          <div class="flow-step">
+            <div class="step-number">01</div>
+            <div class="step-content">
+              <h4>🎯 Captación Inteligente</h4>
+              <p>IA identifica leads hot en 0.3s analizando 127 señales de compra</p>
+              <ul>
+                <li>WhatsApp, Web, Redes, Email</li>
+                <li>Scoring automático en tiempo real</li>
+                <li>Alerta inmediata para leads VIP</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div class="flow-arrow">→</div>
+          
+          <div class="flow-step">
+            <div class="step-number">02</div>
+            <div class="step-content">
+              <h4>🧠 Calificación Cuántica</h4>
+              <p>47 dimensiones de análisis predictivo determinan valor y probabilidad</p>
+              <ul>
+                <li>Budget, timing, autoridad de compra</li>
+                <li>Análisis de sentimiento avanzado</li>
+                <li>Predicción de ciclo de venta</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div class="flow-arrow">→</div>
+          
+          <div class="flow-step">
+            <div class="step-number">03</div>
+            <div class="step-content">
+              <h4>⚡ Engagement Hiperpersonalizado</h4>
+              <p>Cada mensaje se adapta al perfil psicológico y momento del lead</p>
+              <ul>
+                <li>Conversaciones contextuales</li>
+                <li>Timing perfecto para cada contacto</li>
+                <li>Follow-up predictivo automático</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div class="flow-arrow">→</div>
+          
+          <div class="flow-step">
+            <div class="step-number">04</div>
+            <div class="step-content">
+              <h4>💰 Cierre Automático</h4>
+              <p>IA detecta señales de compra y ejecuta estrategias de cierre</p>
+              <ul>
+                <li>Detección de buying signals</li>
+                <li>Ofertas dinámicas personalizadas</li>
+                <li>Contratos y documentación automática</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CASOS DE ÉXITO -->
+    <section id="casos-exito" class="section muted">
+      <div class="container">
+        <div class="section-head">
+          <span class="badge">📊 RESULTADOS VERIFICADOS</span>
+          <h2>Casos de Éxito Reales</h2>
+          <p>Inmobiliarias que multiplicaron sus ventas con MELANO AI™</p>
+        </div>
+        
+        <div class="case-studies">
+          <div class="case-study featured">
+            <div class="case-header">
+              <div class="company-info">
+                <h3>Inmobiliaria Premium S.A.</h3>
+                <p>Buenos Aires, Argentina • 47 agentes</p>
+              </div>
+              <div class="case-results">
+                <div class="result-big">+485%</div>
+                <div class="result-label">Aumento en ventas</div>
+              </div>
+            </div>
+            <div class="case-content">
+              <blockquote>
+                "En 90 días pasamos de $2.1M a $12.3M en ventas. MELANO AI™ predijo exactamente qué leads iban a comprar. Es como tener una bola de cristal para inmobiliarias."
+              </blockquote>
+              <div class="case-author">
+                <strong>Ricardo Maldonado</strong> - CEO
+              </div>
+              <div class="case-metrics">
+                <div class="metric">
+                  <span class="metric-value">98.2%</span>
+                  <span class="metric-label">Precisión IA</span>
+                </div>
+                <div class="metric">
+                  <span class="metric-value">1.7s</span>
+                  <span class="metric-label">Respuesta</span>
+                </div>
+                <div class="metric">
+                  <span class="metric-value">67%</span>
+                  <span class="metric-label">Menos tiempo/lead</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="case-study">
+            <div class="case-header">
+              <div class="company-info">
+                <h3>Elite Realty Group</h3>
+                <p>Miami, FL • 23 agentes</p>
+              </div>
+              <div class="case-results">
+                <div class="result-big">+298%</div>
+                <div class="result-label">ROI en 6 meses</div>
+              </div>
+            </div>
+            <div class="case-content">
+              <blockquote>
+                "Nuestra conversión de leads subió de 3.2% a 11.7%. La IA predice no solo quién comprará, sino CUÁNDO y a QUÉ PRECIO. Increíble."
+              </blockquote>
+              <div class="case-author">
+                <strong>Sarah Mitchell</strong> - VP Sales
+              </div>
+            </div>
+          </div>
+          
+          <div class="case-study">
+            <div class="case-header">
+              <div class="company-info">
+                <h3>PropTech Innovators</h3>
+                <p>Barcelona, España • 89 agentes</p>
+              </div>
+              <div class="case-results">
+                <div class="result-big">+412%</div>
+                <div class="result-label">Leads calificados</div>
+              </div>
+            </div>
+            <div class="case-content">
+              <blockquote>
+                "Implementamos MELANO AI™ y en 120 días teníamos una pipeline de €47M. La automatización funciona mientras dormimos."
+              </blockquote>
+              <div class="case-author">
+                <strong>Carlos Mendoza</strong> - Director Comercial
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="social-proof">
+          <div class="proof-stat">
+            <div class="proof-number">147+</div>
+            <div class="proof-label">Inmobiliarias activas</div>
+          </div>
+          <div class="proof-stat">
+            <div class="proof-number">$2.8B</div>
+            <div class="proof-label">En ventas generadas</div>
+          </div>
+          <div class="proof-stat">
+            <div class="proof-number">94.7%</div>
+            <div class="proof-label">Satisfacción cliente</div>
+          </div>
+          <div class="proof-stat">
+            <div class="proof-number">24/7</div>
+            <div class="proof-label">Soporte premium</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PRECIOS PREMIUM -->
+    <section id="precios" class="section">
+      <div class="container">
+        <div class="section-head">
+          <span class="badge alt">💎 ACCESO LIMITADO</span>
+          <h2>Inversión En El Futuro De Tu Inmobiliaria</h2>
+          <p>Solo <strong>50 inmobiliarias por mes</strong> obtienen acceso a la tecnología cuántica más avanzada del mercado.</p>
+        </div>
+        
+        <div class="pricing-premium">
+          <div class="price-card starter">
+            <div class="card-header">
+              <h3>Quantum Lite</h3>
+              <div class="price">$1,997<span>/mes</span></div>
+              <p class="price-desc">Para inmobiliarias en crecimiento</p>
+            </div>
+            <div class="card-features">
+              <ul>
+                <li>✅ IA Predictiva básica (hasta 500 leads/mes)</li>
+                <li>✅ Automatización WhatsApp + Web</li>
+                <li>✅ Pipeline cuántico</li>
+                <li>✅ Reportes en tiempo real</li>
+                <li>✅ 3 agentes incluidos</li>
+                <li>✅ Integración CRM básica</li>
+                <li>✅ Soporte 24/7</li>
+              </ul>
+            </div>
+            <div class="card-footer">
+              <a class="btn btn-outline" href="#contacto">Comenzar Ahora</a>
+              <p class="guarantee">✅ Garantía 30 días</p>
+            </div>
+          </div>
+          
+          <div class="price-card professional featured">
+            <div class="popular-badge">🚀 MÁS ELEGIDO</div>
+            <div class="card-header">
+              <h3>Quantum Pro</h3>
+              <div class="price">$4,997<span>/mes</span></div>
+              <p class="price-desc">La solución completa para líderes</p>
+            </div>
+            <div class="card-features">
+              <ul>
+                <li>✅ <strong>IA Cuántica Completa</strong> (leads ilimitados)</li>
+                <li>✅ <strong>Predicción 94.7% precisión</strong></li>
+                <li>✅ Automatización omnicanal completa</li>
+                <li>✅ 47D Lead Scoring</li>
+                <li>✅ 10 agentes incluidos</li>
+                <li>✅ Integraciones premium</li>
+                <li>✅ Revenue forecasting</li>
+                <li>✅ Soporte dedicado + consultoría</li>
+                <li>✅ <strong>Implementación white-glove</strong></li>
+              </ul>
+            </div>
+            <div class="card-footer">
+              <a class="btn btn-quantum" href="#contacto">🧠 Activar IA Cuántica</a>
+              <p class="guarantee">✅ ROI garantizado o reembolso</p>
+            </div>
+          </div>
+          
+          <div class="price-card enterprise">
+            <div class="card-header">
+              <h3>Quantum Enterprise</h3>
+              <div class="price">A medida</div>
+              <p class="price-desc">Para corporaciones y holdings</p>
+            </div>
+            <div class="card-features">
+              <ul>
+                <li>✅ <strong>Customización total</strong></li>
+                <li>✅ Múltiples mercados/países</li>
+                <li>✅ IA entrenada con tu data</li>
+                <li>✅ Agentes ilimitados</li>
+                <li>✅ API completa</li>
+                <li>✅ Implementación dedicada</li>
+                <li>✅ SLA premium 99.9%</li>
+                <li>✅ Account Manager dedicado</li>
+              </ul>
+            </div>
+            <div class="card-footer">
+              <a class="btn btn-premium" href="#contacto">Consultar Precio</a>
+              <p class="guarantee">✅ Contrato personalizado</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="pricing-benefits">
+          <h3>🎁 Bonuses Exclusivos Por Tiempo Limitado</h3>
+          <div class="bonuses">
+            <div class="bonus">
+              <div class="bonus-icon">🎯</div>
+              <div class="bonus-content">
+                <h4>Setup Completo GRATIS</h4>
+                <p>Valor: $7,500 • Implementación completa en 48h</p>
+              </div>
+            </div>
+            <div class="bonus">
+              <div class="bonus-icon">📊</div>
+              <div class="bonus-content">
+                <h4>Auditoría de Pipeline</h4>
+                <p>Valor: $3,200 • Análisis completo + recomendaciones</p>
+              </div>
+            </div>
+            <div class="bonus">
+              <div class="bonus-icon">🚀</div>
+              <div class="bonus-content">
+                <h4>Estrategias de Conversión</h4>
+                <p>Valor: $4,800 • Playbook exclusivo + consultoría 1:1</p>
+              </div>
+            </div>
+          </div>
+          <p class="bonus-total">Valor total de bonuses: <strong class="quantum-text">$15,500 GRATIS</strong></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONTACTO PREMIUM -->
+    <section id="contacto" class="section quantum-section">
+      <div class="container">
+        <div class="section-head">
+          <span class="badge-quantum">⚡ RESPUESTA INMEDIATA</span>
+          <h2>Obtén Tu Demo Exclusiva de IA Cuántica</h2>
+          <p>En 15 minutos te mostramos cómo MELANO AI™ puede <strong>triplicar tus ventas inmobiliarias</strong> en los próximos 90 días.</p>
+        </div>
+
+        <div class="contact-container">
+          <div class="contact-form-wrapper">
+            <form id="demo-form" class="form-premium card-glow" novalidate>
+              <div class="form-header">
+                <h3>🚀 Solicitud de Demo VIP</h3>
+                <p>Solo <span id="spots-left" class="quantum-text">12 spots</span> disponibles este mes</p>
+              </div>
+              
+              <div class="form-grid">
+                <div class="field-group">
+                  <label for="name">Nombre Completo</label>
+                  <input id="name" name="name" type="text" placeholder="Tu nombre completo" required />
+                </div>
+                
+                <div class="field-group">
+                  <label for="email">Email Corporativo</label>
+                  <input id="email" name="email" type="email" placeholder="nombre@inmobiliaria.com" required />
+                </div>
+                
+                <div class="field-group">
+                  <label for="phone">WhatsApp</label>
+                  <input id="phone" name="phone" type="tel" placeholder="+54 9 11 1234 5678" required />
+                </div>
+                
+                <div class="field-group">
+                  <label for="company">Inmobiliaria</label>
+                  <input id="company" name="company" type="text" placeholder="Nombre de tu inmobiliaria" required />
+                </div>
+                
+                <div class="field-group">
+                  <label for="agents">Número de Agentes</label>
+                  <select id="agents" name="agents" required>
+                    <option value="">Seleccionar</option>
+                    <option value="1-5">1-5 agentes</option>
+                    <option value="6-15">6-15 agentes</option>
+                    <option value="16-30">16-30 agentes</option>
+                    <option value="31-50">31-50 agentes</option>
+                    <option value="50+">50+ agentes</option>
+                  </select>
+                </div>
+                
+                <div class="field-group">
+                  <label for="revenue">Revenue Mensual Actual</label>
+                  <select id="revenue" name="revenue" required>
+                    <option value="">Seleccionar</option>
+                    <option value="lt-100k">< $100K USD</option>
+                    <option value="100k-500k">$100K - $500K USD</option>
+                    <option value="500k-1m">$500K - $1M USD</option>
+                    <option value="1m-5m">$1M - $5M USD</option>
+                    <option value="5m+">$5M+ USD</option>
+                  </select>
+                </div>
+                
+                <div class="field-group full-width">
+                  <label for="challenge">Principal Desafío Actual</label>
+                  <select id="challenge" name="challenge">
+                    <option value="">Seleccionar desafío</option>
+                    <option value="lead-quality">Calidad de leads muy baja</option>
+                    <option value="conversion">Conversión de leads deficiente</option>
+                    <option value="follow-up">Falta de seguimiento automático</option>
+                    <option value="scale">Necesito escalar operaciones</option>
+                    <option value="competition">Competencia me está ganando</option>
+                    <option value="efficiency">Procesos muy ineficientes</option>
+                  </select>
+                </div>
+                
+                <div class="field-group checkbox full-width">
+                  <label class="checkbox-container">
+                    <input id="urgency" name="urgency" type="checkbox" />
+                    <span class="checkmark"></span>
+                    <strong>URGENTE:</strong> Necesito implementar una solución en los próximos 30 días
+                  </label>
+                </div>
+                
+                <div class="field-group checkbox full-width">
+                  <label class="checkbox-container">
+                    <input id="decision" name="decision" type="checkbox" />
+                    <span class="checkmark"></span>
+                    Tengo autoridad para tomar decisiones de inversión en tecnología
+                  </label>
+                </div>
+              </div>
+              
+              <div class="form-actions">
+                <button class="btn btn-quantum-large" type="submit">
+                  🧠 OBTENER DEMO DE IA CUÁNTICA
+                </button>
+                <div class="form-guarantees">
+                  <div class="guarantee-item">✅ Demo personalizada en 24h</div>
+                  <div class="guarantee-item">✅ Análisis gratuito de tu pipeline</div>
+                  <div class="guarantee-item">✅ Estrategia de implementación</div>
+                </div>
+              </div>
+              
+              <div id="form-status" class="form-status" role="status" aria-live="polite"></div>
+              
+              <div class="form-footer">
+                <p>🔒 Información 100% confidencial. Solo contacto de nuestro equipo técnico.</p>
+              </div>
+            </form>
+          </div>
+          
+          <div class="contact-benefits">
+            <div class="benefit-card">
+              <div class="benefit-icon">⚡</div>
+              <h4>Setup en 48 Horas</h4>
+              <p>Implementación completa y funcionando en menos de 2 días laborales.</p>
+            </div>
+            
+            <div class="benefit-card">
+              <div class="benefit-icon">🎯</div>
+              <h4>ROI Garantizado</h4>
+              <p>Si no aumentas conversiones 200%+ en 90 días, te devolvemos el dinero.</p>
+            </div>
+            
+            <div class="benefit-card">
+              <div class="benefit-icon">🚀</div>
+              <h4>Soporte White-Glove</h4>
+              <p>Equipo dedicado disponible 24/7 para maximizar tus resultados.</p>
+            </div>
+            
+            <div class="contact-urgency">
+              <div class="urgency-header">
+                <span class="pulse-dot"></span>
+                <strong>Solo quedan 12 slots este mes</strong>
+              </div>
+              <p>Acceso limitado para garantizar atención premium a cada cliente.</p>
+              <div class="countdown">
+                <div class="countdown-item">
+                  <span id="days">--</span>
+                  <label>Días</label>
+                </div>
+                <div class="countdown-item">
+                  <span id="hours">--</span>
+                  <label>Horas</label>
+                </div>
+                <div class="countdown-item">
+                  <span id="minutes">--</span>
+                  <label>Min</label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-brand">
+          <div class="brand-logo">
+            <svg width="32" height="32" viewBox="0 0 100 100">
+              <defs>
+                <linearGradient id="footerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#ff6b35"/>
+                  <stop offset="50%" stop-color="#5b2bc4"/>
+                  <stop offset="100%" stop-color="#00d4aa"/>
+                </linearGradient>
+              </defs>
+              <circle cx="50" cy="50" r="48" fill="url(#footerGrad)"/>
+              <text x="50" y="60" text-anchor="middle" font-family="Inter,system-ui,Arial" font-size="32" fill="#fff" font-weight="900">M</text>
+            </svg>
+          </div>
+          <div>
+            <strong>MELANO AI™</strong>
+            <p>La primera IA Cuántica para inmobiliarias</p>
+            <div class="footer-certifications">
+              <span class="cert">🏆 Patente Pendiente</span>
+              <span class="cert">🔒 SOC2 Certified</span>
+              <span class="cert">⭐ 99.9% Uptime SLA</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="footer-links">
+          <div class="link-group">
+            <h4>Producto</h4>
+            <a href="#ia-cuantica">IA Cuántica</a>
+            <a href="#automatizacion">Automatización</a>
+            <a href="#casos-exito">Casos de Éxito</a>
+            <a href="#precios">Precios</a>
+          </div>
+          <div class="link-group">
+            <h4>Empresa</h4>
+            <a href="/about">Nosotros</a>
+            <a href="/careers">Carreras</a>
+            <a href="/press">Prensa</a>
+            <a href="/investors">Inversores</a>
+          </div>
+          <div class="link-group">
+            <h4>Soporte</h4>
+            <a href="/help">Centro de Ayuda</a>
+            <a href="/api">Documentación API</a>
+            <a href="/status">System Status</a>
+            <a href="#contacto">Contacto</a>
+          </div>
+        </div>
+      </div>
+      
+      <div class="footer-bottom">
+        <p>&copy; 2025 Melano Inc. MELANO AI™ es marca registrada. Todos los derechos reservados.</p>
+        <div class="footer-legal">
+          <a href="/privacy">Privacidad</a>
+          <a href="/terms">Términos</a>
+          <a href="/cookies">Cookies</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- WhatsApp Premium -->
+  <a id="floating-whatsapp" class="floating-wa hide-nojs" href="#" target="_blank" rel="noopener" aria-label="WhatsApp VIP">
+    <svg viewBox="0 0 24 24" width="28" height="28">
+      <circle cx="12" cy="12" r="11" fill="url(#whatsappGrad)"/>
+      <defs>
+        <linearGradient id="whatsappGrad">
+          <stop offset="0%" stop-color="#25D366"/>
+          <stop offset="100%" stop-color="#128C7E"/>
+        </linearGradient>
+      </defs>
+      <path d="M16.2 13.7c-.2-.1-1.3-.6-1.5-.7-.2-.1-.3-.1-.5.1-.1.2-.6.7-.7.8-.1.1-.3.1-.5 0-.2-.1-1-.4-1.9-1.2-.7-.6-1.2-1.4-1.3-1.6-.1-.2 0-.3.1-.4.1-.1.2-.3.3-.4.1-.1.1-.2.2-.3.1-.1.1-.2.2-.3.1-.1.1-.2.2-.3.1-.1 0-.2 0-.3 0-.1-.5-1.3-.7-1.7-.2-.4-.4-.3-.5-.3h-.4c-.1 0-.3 0-.5.2-.2.2-.7.7-.7 1.7s.7 2 .8 2.1c.1.1 1.4 2.2 3.4 3.1 1.3.6 1.8.6 2.4.5.4-.1 1.3-.5 1.5-1 .2-.5.2-.9.1-1 0-.1-.2-.1-.4-.2z" fill="#fff"/>
+    </svg>
+    <div class="wa-pulse"></div>
+  </a>
+
+  <!-- Scripts -->
+  <script type="module">
+    import { N8N_BASE_URL, ENDPOINTS, CONTACT } from './config.js';
+    import './script.js';
+
+    // Configuración de CTAs
+    const waFloat = document.getElementById('floating-whatsapp');
+    const waLink = (CONTACT && CONTACT.whatsapp) ? 
+      (CONTACT.whatsapp.startsWith('http') ? CONTACT.whatsapp : ('https://' + CONTACT.whatsapp)) : 
+      'https://wa.me/5492235506595?text=Quiero%20una%20demo%20de%20MELANO%20AI';
+
+    if (waFloat) {
+      waFloat.href = waLink;
+      waFloat.classList.remove('hide-nojs');
+    }
+
+    // Calendly triggers
+    function initCalendlyTriggers() {
+      document.querySelectorAll('.calendly-trigger').forEach(el => {
+        el.addEventListener('click', e => {
+          const url = el.dataset.calendlyUrl || 'https://calendly.com/melanobruno';
+          if (url.startsWith('http')) {
+            e.preventDefault();
+            if (window.Calendly && typeof Calendly.initPopupWidget === 'function') {
+              Calendly.initPopupWidget({ url });
+            } else {
+              window.open(url, '_blank', 'noopener');
+            }
+          }
+        });
+      });
+    }
+
+    // Countdown timer
+    function initCountdown() {
+      const endDate = new Date();
+      endDate.setDate(endDate.getDate() + 7); // 7 días desde hoy
+      
+      function updateCountdown() {
+        const now = new Date().getTime();
+        const distance = endDate.getTime() - now;
+        
+        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        
+        const daysEl = document.getElementById('days');
+        const hoursEl = document.getElementById('hours');
+        const minutesEl = document.getElementById('minutes');
+        
+        if (daysEl) daysEl.textContent = days.toString().padStart(2, '0');
+        if (hoursEl) hoursEl.textContent = hours.toString().padStart(2, '0');
+        if (minutesEl) minutesEl.textContent = minutes.toString().padStart(2, '0');
+        
+        if (distance < 0) {
+          // Reset countdown
+          endDate.setDate(endDate.getDate() + 7);
+        }
+      }
+      
+      updateCountdown();
+      setInterval(updateCountdown, 60000); // Actualizar cada minuto
+    }
+
+    // Spots left animation
+    function animateSpots() {
+      const spotsEl = document.getElementById('spots-left');
+      if (spotsEl) {
+        let spots = 12;
+        setInterval(() => {
+          if (Math.random() < 0.1) { // 10% de probabilidad cada intervalo
+            spots = Math.max(3, spots - 1);
+            spotsEl.textContent = spots;
+          }
+        }, 30000); // Cada 30 segundos
+      }
+    }
+
+    // Partículas de fondo
+    function initParticles() {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const particlesContainer = document.getElementById('particles-bg');
+      
+      if (!particlesContainer) return;
+      
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      particlesContainer.appendChild(canvas);
+      
+      const particles = [];
+      const particleCount = 50;
+      
+      for (let i = 0; i < particleCount; i++) {
+        particles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          vx: (Math.random() - 0.5) * 0.5,
+          vy: (Math.random() - 0.5) * 0.5,
+          size: Math.random() * 2 + 1,
+          opacity: Math.random() * 0.5 + 0.1
         });
       }
-    });
-  });
-
-  // Header scroll effect
-  const header = $('.site-header');
-  if (header) {
-    window.addEventListener('scroll', throttle(() => {
-      if (window.scrollY > 100) {
-        header.style.background = 'rgba(10, 10, 15, 0.95)';
-      } else {
-        header.style.background = 'rgba(10, 10, 15, 0.85)';
+      
+      function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        particles.forEach(particle => {
+          particle.x += particle.vx;
+          particle.y += particle.vy;
+          
+          if (particle.x < 0 || particle.x > canvas.width) particle.vx *= -1;
+          if (particle.y < 0 || particle.y > canvas.height) particle.vy *= -1;
+          
+          ctx.beginPath();
+          ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(91, 43, 196, ${particle.opacity})`;
+          ctx.fill();
+        });
+        
+        requestAnimationFrame(animate);
       }
-    }, 100));
-  }
-
-  // Lazy load de imágenes si las hubiera
-  if ('IntersectionObserver' in window) {
-    const imageObserver = new IntersectionObserver((entries, observer) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          const img = entry.target;
-          img.src = img.dataset.src;
-          img.classList.remove('lazy');
-          imageObserver.unobserve(img);
-        }
+      
+      animate();
+      
+      window.addEventListener('resize', () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
       });
+    }
+
+    // Inicialización
+    document.addEventListener('DOMContentLoaded', () => {
+      initCalendlyTriggers();
+      initCountdown();
+      animateSpots();
+      initParticles();
     });
 
-    document.querySelectorAll('img[data-src]').forEach(img => {
-      imageObserver.observe(img);
-    });
-  }
-});
-
-// Exportar para uso global si es necesario
-window.MelanoAI = {
-  NotificationSystem,
-  AnalyticsSystem,
-  LeadScoringSystem,
-  AdvancedValidator
-};
+    // Exposer configuración para debug
+    window.__MELANO_AI__ = { N8N_BASE_URL, ENDPOINTS, CONTACT };
+  </script>
+</body>
+</html>
