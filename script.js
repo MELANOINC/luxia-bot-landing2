@@ -81,6 +81,10 @@ window.addEventListener('DOMContentLoaded', () => {
   // Initialize tabs for system demo
   initSystemTabs();
   
+  // Initialize bilingual and currency systems
+  initLanguageSystem();
+  initCurrencySystem();
+  
   // Mostrar WhatsApp flotante después de 3 segundos
   setTimeout(() => {
     const floatingWa = $('#floating-whatsapp');
@@ -127,6 +131,153 @@ function initSystemTabs() {
       }
     });
   });
+}
+
+/**
+ * Bilingual System Handler
+ */
+function initLanguageSystem() {
+  const langButtons = document.querySelectorAll('.lang-btn');
+  let currentLang = 'es'; // Default Spanish
+  
+  // Content translations
+  const translations = {
+    es: {
+      'demo-title': '🚀 Demo en Vivo: Sistema MELANO NEXUS',
+      'demo-subtitle': 'Observa cómo mi IA analiza oportunidades en tiempo real',
+      'integration-title': '🔄 Integración LUXIA ↔ NOTORIUS',
+      'stats-clients': 'Clientes Activos',
+      'stats-aum': 'AUM Total',
+      'stats-conversion': 'Tasa Conversión',
+      'stats-contracts': 'Contratos Activos',
+      'pipeline-title': '🎯 Pipeline de Ventas - Tiempo Real',
+      'hot-lead': '🔥 CALIENTE',
+      'processing-lead': '⚡ EN PROCESO', 
+      'closing-lead': '💰 CERRANDO',
+      'wa-label': 'Consulta Gratis'
+    },
+    en: {
+      'demo-title': '🚀 Live Demo: MELANO NEXUS System',
+      'demo-subtitle': 'Watch how my AI analyzes opportunities in real-time',
+      'integration-title': '🔄 LUXIA ↔ NOTORIUS Integration',
+      'stats-clients': 'Active Clients',
+      'stats-aum': 'Total AUM',
+      'stats-conversion': 'Conversion Rate',
+      'stats-contracts': 'Active Contracts',
+      'pipeline-title': '🎯 Sales Pipeline - Real Time',
+      'hot-lead': '🔥 HOT',
+      'processing-lead': '⚡ PROCESSING',
+      'closing-lead': '💰 CLOSING',
+      'wa-label': 'Free Consult'
+    }
+  };
+  
+  function switchLanguage(lang) {
+    currentLang = lang;
+    
+    // Update active button
+    langButtons.forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.lang === lang);
+    });
+    
+    // Update all elements with data-es and data-en attributes
+    const elements = document.querySelectorAll('[data-es], [data-en]');
+    elements.forEach(el => {
+      const text = el.getAttribute(`data-${lang}`);
+      if (text) {
+        if (el.tagName === 'INPUT' && el.type === 'submit') {
+          el.value = text;
+        } else {
+          el.textContent = text;
+        }
+      }
+    });
+    
+    // Update specific dynamic content
+    const waLabel = document.querySelector('.wa-label');
+    if (waLabel) waLabel.textContent = translations[lang]['wa-label'];
+    
+    // Update form placeholders if needed
+    const nameInput = document.getElementById('fullName');
+    if (nameInput) {
+      nameInput.placeholder = lang === 'es' ? 'Tu nombre completo' : 'Your full name';
+    }
+    
+    const emailInput = document.getElementById('email');
+    if (emailInput) {
+      emailInput.placeholder = lang === 'es' ? 'tu.email@ejemplo.com' : 'your.email@example.com';
+    }
+    
+    // Store language preference
+    localStorage.setItem('melano-lang', lang);
+    
+    console.log(`Language switched to: ${lang}`);
+  }
+  
+  // Initialize language buttons
+  langButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      switchLanguage(btn.dataset.lang);
+    });
+  });
+  
+  // Load saved language preference
+  const savedLang = localStorage.getItem('melano-lang') || 'es';
+  switchLanguage(savedLang);
+}
+
+/**
+ * Currency System Handler
+ */
+function initCurrencySystem() {
+  const currencyButtons = document.querySelectorAll('.currency-btn');
+  let currentCurrency = 'ars'; // Default ARS
+  
+  const exchangeRate = 1000; // 1 USD = 1000 ARS (approximate)
+  
+  function switchCurrency(currency) {
+    currentCurrency = currency;
+    
+    // Update active button
+    currencyButtons.forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.currency === currency);
+    });
+    
+    // Show/hide currency amounts
+    const arsPrices = document.querySelectorAll('.ars-price');
+    const usdPrices = document.querySelectorAll('.usd-price');
+    const currencyAmounts = document.querySelectorAll('.currency-amount');
+    
+    if (currency === 'ars') {
+      arsPrices.forEach(el => el.classList.remove('hidden'));
+      usdPrices.forEach(el => el.classList.add('hidden'));
+      currencyAmounts.forEach(el => {
+        if (el.dataset.ars) el.textContent = el.dataset.ars;
+      });
+    } else {
+      arsPrices.forEach(el => el.classList.add('hidden'));
+      usdPrices.forEach(el => el.classList.remove('hidden'));
+      currencyAmounts.forEach(el => {
+        if (el.dataset.usd) el.textContent = el.dataset.usd;
+      });
+    }
+    
+    // Store currency preference
+    localStorage.setItem('melano-currency', currency);
+    
+    console.log(`Currency switched to: ${currency.toUpperCase()}`);
+  }
+  
+  // Initialize currency buttons
+  currencyButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      switchCurrency(btn.dataset.currency);
+    });
+  });
+  
+  // Load saved currency preference
+  const savedCurrency = localStorage.getItem('melano-currency') || 'ars';
+  switchCurrency(savedCurrency);
 }
 
 /**
