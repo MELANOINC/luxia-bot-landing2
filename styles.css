@@ -2125,6 +2125,69 @@ h1{
   }
 }
 
+/* Authentication Section */
+.auth-section {
+  background: var(--card-glass);
+  border: 2px solid var(--card-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-3xl);
+  margin: var(--space-3xl) 0;
+  text-align: center;
+  backdrop-filter: blur(20px);
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-section::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--gradient-card);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.auth-content {
+  position: relative;
+  z-index: 2;
+}
+
+.auth-content h3 {
+  color: var(--gold);
+  font-size: 28px;
+  font-weight: 900;
+  margin-bottom: var(--space-lg);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.auth-content p {
+  color: var(--text-dim);
+  font-size: 18px;
+  margin-bottom: var(--space-2xl);
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.auth-buttons {
+  display: flex;
+  gap: var(--space-lg);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* Access Buttons */
+.access-premium-btn {
+  margin-top: var(--space-xl);
+  width: 100%;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
 .hidden {
   display: none !important;
 }
