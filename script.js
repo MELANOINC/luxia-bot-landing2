@@ -698,6 +698,19 @@ function initInvestmentForm() {
       // 3) Sincronización con CRM
       await postJson(ENDPOINTS.crmSync || '/crm-sync', payload);
 
+      // 4) Generar mensaje personalizado con IA (solo demo)
+      try {
+        const aiRes = await fetch('/lead-summary', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const aiData = await aiRes.json();
+        console.log('AI summary:', aiData.summary);
+      } catch (aiErr) {
+        console.warn('AI summary failed:', aiErr);
+      }
+
       setStatus('¡Perfecto! Tu consulta fue recibida. Te contactaremos en menos de 2 horas por WhatsApp o teléfono.', 'success');
       form.reset();
 
