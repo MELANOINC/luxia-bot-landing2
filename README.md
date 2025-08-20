@@ -35,10 +35,14 @@
 - **CRM Sync:** `/crm-sync` para sincronización
 - **Validaciones:** Manejo de errores y mensajes al usuario
 - **Calendly:** Integración para agendar demos
+- **IA Generativa:** `/lead-summary` genera mensajes personalizados para leads
 
 ---
 
 ## 🛠️ INSTALACIÓN Y CONFIGURACIÓN
+
+### 0. Configurar OpenAI (Opcional)
+Agregar `OPENAI_API_KEY` en `.env` para habilitar la generación automática de mensajes.
 
 ### 1. Configurar n8n (OBLIGATORIO)
 Editar `config.js`:
