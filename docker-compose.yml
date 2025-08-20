@@ -1,4 +1,3 @@
-version: '3.8'
 services:
   web:
     build: .
@@ -10,8 +9,6 @@ services:
         condition: service_healthy
     networks:
       - app-network
-    healthcheck:
-    # Ensure 'curl' is installed in the final image, or change this healthcheck to use a tool that is present.
     healthcheck:
       test: ["CMD-SHELL", "wget --spider -q http://localhost:3000/health || exit 1"]
       interval: 30s
