@@ -35,6 +35,7 @@
 - **CRM Sync:** `/crm-sync` para sincronización
 - **Validaciones:** Manejo de errores y mensajes al usuario
 - **Calendly:** Integración para agendar demos
+- **Generación de textos:** Endpoint `/generate-description` usando OpenAI
 
 ---
 
@@ -50,14 +51,17 @@ const CONFIG = {
 };
 ```
 
-### 2. Subir a Hosting
+### 2. Configurar OpenAI (IA Generativa)
+Añade la variable de entorno `OPENAI_API_KEY` con tu clave de [OpenAI](https://platform.openai.com/).
+
+### 3. Subir a Hosting
 **Opciones recomendadas:**
 - **Netlify:** Drag & drop todos los archivos
 - **Vercel:** Conectar con GitHub
 - **Cloudflare Pages:** Deploy directo
 - **Hosting tradicional:** Subir vía FTP
 
-### 3. Conectar n8n Workflows
+### 4. Conectar n8n Workflows
 Los flujos existentes deben estar en:
 - `POST /lead-capture` - Captura general de leads
 - `POST /lead-hot` - Leads con presupuesto >$1000
