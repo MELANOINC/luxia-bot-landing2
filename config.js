@@ -95,6 +95,16 @@ export const MELANO_NEXUS = {
   capitalGestionado: '€2M+'
 };
 
+/**
+ * Configuración de la IA Cuántica (Quantum AI)
+ * Parte del ecosistema de Melano Inc
+ */
+export const QUANTUM_AI = {
+  enabled: true,
+  endpoint: 'https://quantum.melano.inc/api/analyze',
+  model: 'luxia-quantum-v2'
+};
+
 // Configuración para debugging y desarrollo
 export const DEBUG = {
   enabled: true,
@@ -111,6 +121,7 @@ export default {
   TRACKING,
   FORM_CONFIG,
   MELANO_NEXUS,
+  QUANTUM_AI,
   DEBUG,
   apiUrl,
   generateWhatsAppUrl

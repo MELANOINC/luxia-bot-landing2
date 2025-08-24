@@ -1,5 +1,6 @@
 # 🚀 LUXIA BOT™ - MELANO INC
 ## CRM y Embudos de Ventas para Agencias Inmobiliarias
+### ⚛️ Integrado con IA Cuántica del ecosistema Melano Inc
 
 ### ✅ DEMO COMPLETAMENTE PROBADA Y FUNCIONAL
 
@@ -33,6 +34,7 @@
 - **Lead Capture:** `/lead-capture` endpoint configurado
 - **Lead Hot:** `/lead-hot` para presupuestos >$1000
 - **CRM Sync:** `/crm-sync` para sincronización
+- **Quantum AI:** Análisis inteligente de leads mediante IA cuántica de Melano Inc
 - **Validaciones:** Manejo de errores y mensajes al usuario
 - **Calendly:** Integración para agendar demos
 
