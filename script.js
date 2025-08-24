@@ -2,6 +2,7 @@
 // Manejo de formularios, CTAs y funcionalidades interactivas
 
 import { N8N_BASE_URL, ENDPOINTS, apiUrl } from './config.js';
+import { analyzeLeadWithQuantumAI } from './lib/quantum-ai.js';
 
 /**
  * Utils
@@ -697,6 +698,9 @@ function initInvestmentForm() {
 
       // 3) Sincronización con CRM
       await postJson(ENDPOINTS.crmSync || '/crm-sync', payload);
+
+      // 4) Análisis con IA Cuántica
+      await analyzeLeadWithQuantumAI(payload);
 
       setStatus('¡Perfecto! Tu consulta fue recibida. Te contactaremos en menos de 2 horas por WhatsApp o teléfono.', 'success');
       form.reset();
