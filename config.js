@@ -105,6 +105,30 @@ export const QUANTUM_AI = {
   model: 'luxia-quantum-v2'
 };
 
+/**
+ * Configuración del Asistente Principal (Melania)
+ */
+export const ASSISTANT = {
+  name: 'Melania',
+  role: 'Asistente Principal',
+  avatar: '🧠',
+  welcome: [
+    'Hola, soy Melania, tu asistente principal en Melano Inc. ¿En qué te ayudo hoy?',
+    'Puedo guiarte con inversiones, agenda, y acceso a LUXIA/NOTORIUS.'
+  ],
+  capabilities: [
+    'Orientación inicial y FAQs',
+    'Captura y priorización de leads',
+    'Derivación a WhatsApp o Calendly',
+    'Accesos a LUXIA CRM y NOTORIUS (si corresponde)'
+  ],
+  language: ['es', 'en'],
+  theme: {
+    color: 'var(--gold)',
+    accent: 'var(--gold-600)'
+  }
+};
+
 // Configuración para debugging y desarrollo
 export const DEBUG = {
   enabled: true,
@@ -122,6 +146,7 @@ export default {
   FORM_CONFIG,
   MELANO_NEXUS,
   QUANTUM_AI,
+  ASSISTANT,
   DEBUG,
   apiUrl,
   generateWhatsAppUrl
