@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" fill="none">
+  <defs>
+    <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0b0f1a"/>
+      <stop offset="100%" stop-color="#0d1322"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#g1)"/>
+  <circle cx="980" cy="-60" r="380" fill="#00e0d8" opacity="0.08"/>
+  <circle cx="120" cy="-40" r="300" fill="#6aa1ff" opacity="0.08"/>
+  <g transform="translate(120,180)">
+    <rect x="0" y="0" width="96" height="96" rx="20" fill="#0b0f1a" stroke="#1c2a46"/>
+    <path d="M20 80V24l12 16 12-16 12 16 12-16v56" stroke="#6aa1ff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="48" cy="18" r="3" fill="#00e0d8"/>
+  </g>
+  <text x="120" y="180" fill="#9fb0cc" font-family="Inter, Arial, sans-serif" font-size="18">MELANO INC 2122</text>
+  <text x="120" y="260" fill="#e8ecf3" font-family="Inter, Arial, sans-serif" font-size="64" font-weight="700">Titan Bot 2122</text>
+  <text x="120" y="320" fill="#9fb0cc" font-family="Inter, Arial, sans-serif" font-size="24">AI. Automation. Impact.</text>
+  <text x="120" y="380" fill="#cfd7e6" font-family="Inter, Arial, sans-serif" font-size="22">Scalping, arbitraje y tendencias con ejecución de nivel institucional.</text>
+</svg>
