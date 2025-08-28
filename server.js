@@ -10,22 +10,66 @@ dotenv.config();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3000;
 
-// Database connection
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
-const redis = new Redis({
-  host: process.env.REDIS_HOST || 'redis',
-  port: process.env.REDIS_PORT || 6379,
-});
+// Database connection - optional for demo
+let pool = null;
+let redis = null;
+
+if (process.env.DATABASE_URL) {
+  try {
+    pool = new pg.Pool({ 
+      connectionString: process.env.DATABASE_URL,
+      // Add connection timeout to fail faster
+      connectionTimeoutMillis: 2000
+    });
+    console.log('Database pool initialized');
+  } catch (error) {
+    console.warn('Database pool initialization failed:', error.message);
+  }
+}
+
+if (process.env.REDIS_HOST) {
+  try {
+    redis = new Redis({
+      host: process.env.REDIS_HOST,
+      port: process.env.REDIS_PORT || 6379,
+      // Don't auto-retry connections
+      retryDelayOnFailover: 0,
+      maxRetriesPerRequest: 1,
+      lazyConnect: true
+    });
+    console.log('Redis client initialized');
+  } catch (error) {
+    console.warn('Redis client initialization failed:', error.message);
+  }
+}
 
 const app = express();
 app.use(express.json());
 app.use(express.static(__dirname));
 
 app.get('/health', async (_req, res) => {
+  const status = { status: 'OK', database: false, redis: false };
+  
   try {
-    await pool.query('SELECT 1');
-    await redis.ping();
-    res.status(200).send('OK');
+    if (pool) {
+      try {
+        await pool.query('SELECT 1');
+        status.database = true;
+      } catch (dbErr) {
+        console.warn('Database health check failed:', dbErr.message);
+      }
+    }
+    
+    if (redis) {
+      try {
+        await redis.ping();
+        status.redis = true;
+      } catch (redisErr) {
+        console.warn('Redis health check failed:', redisErr.message);
+      }
+    }
+    
+    res.status(200).json(status);
   } catch (err) {
     console.error('Health check failed:', err);
     res.status(500).json({
