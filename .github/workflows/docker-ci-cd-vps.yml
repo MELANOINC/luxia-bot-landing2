@@ -1,6 +1,6 @@
 name: 🚀 CI/CD Docker - Despliegue Automático a VPS
 
-on:
+"on":
   push:
     branches: [ "main", "develop" ]
   pull_request:
