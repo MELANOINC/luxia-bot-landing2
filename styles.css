@@ -2191,3 +2191,24 @@ h1{
 .hidden {
   display: none !important;
 }
+
+/* Melania Assistant Widget */
+.melania-assistant{position:fixed;right:20px;bottom:20px;z-index:9999}
+.melania-assistant .melania-toggle{width:56px;height:56px;border-radius:50%;border:2px solid var(--gold);background:var(--card-glass);backdrop-filter:blur(6px);color:var(--gold);box-shadow:var(--shadow-glow)}
+.melania-assistant .melania-panel{position:fixed;right:20px;bottom:90px;width:320px;max-height:70vh;display:flex;flex-direction:column;background:var(--card-glass);border:1px solid var(--card-border);border-radius:16px;box-shadow:var(--shadow-lg);backdrop-filter:blur(10px)}
+.melania-assistant .melania-panel.hidden{display:none}
+.melania-assistant .melania-header{display:flex;align-items:center;gap:10px;padding:12px 12px;border-bottom:1px solid var(--card-border)}
+.melania-assistant .melania-avatar{font-size:22px}
+.melania-assistant .melania-meta{display:flex;flex-direction:column;line-height:1.1}
+.melania-assistant .melania-meta strong{color:var(--text)}
+.melania-assistant .melania-meta span{color:var(--text-dim);font-size:12px}
+.melania-assistant .melania-close{margin-left:auto;background:transparent;border:0;color:var(--text)}
+.melania-assistant .melania-messages{padding:12px;overflow:auto;display:flex;flex-direction:column;gap:8px}
+.melania-assistant .msg{padding:8px 10px;border-radius:12px;max-width:85%}
+.melania-assistant .msg.user{align-self:flex-end;background:var(--gold);color:#000}
+.melania-assistant .msg.bot{align-self:flex-start;background:var(--surface-glass);color:var(--text)}
+.melania-assistant .melania-input{display:flex;gap:8px;padding:10px;border-top:1px solid var(--card-border)}
+.melania-assistant .melania-input input{flex:1;padding:10px;border-radius:10px;border:1px solid var(--card-border);background:var(--surface-glass);color:var(--text)}
+.melania-assistant .melania-input .btn-send{background:var(--gold);border:0;border-radius:10px;padding:0 14px;color:#000}
+.melania-assistant .melania-quick{display:flex;gap:8px;padding:8px 10px;border-top:1px solid var(--card-border)}
+.melania-assistant .melania-quick button{flex:1;border:1px solid var(--gold);background:transparent;color:var(--gold);border-radius:10px;padding:8px}
