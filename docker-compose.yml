@@ -1,8 +1,35 @@
 version: '3.8'
 services:
+  # Node.js Frontend/API
   web:
     build: .
     env_file: .env
+    environment:
+      - MELANIA_BOT_URL=http://melania-bot:8000
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      melania-bot:
+        condition: service_started
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:3000/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # MELANIA BOT Python API
+  melania-bot:
+    build:
+      context: ./melania_bot
+      dockerfile: Dockerfile
+    env_file: .env
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     depends_on:
       db:
         condition: service_healthy
@@ -11,12 +38,12 @@ services:
     networks:
       - app-network
     healthcheck:
-    # Ensure 'curl' is installed in the final image, or change this healthcheck to use a tool that is present.
-    healthcheck:
-      test: ["CMD-SHELL", "wget --spider -q http://localhost:3000/health || exit 1"]
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:8000/health || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3
+
+  # PostgreSQL Database
   db:
     image: postgres:15-alpine
     restart: always
@@ -27,6 +54,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./melania_bot/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - app-network
     healthcheck:
@@ -34,6 +62,8 @@ services:
       interval: 30s
       timeout: 5s
       retries: 5
+
+  # Redis Cache
   redis:
     image: redis:7-alpine
     restart: always
@@ -44,10 +74,14 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
+
+  # Nginx Reverse Proxy
   nginx:
     image: nginx:alpine
     depends_on:
       web:
+        condition: service_started
+      melania-bot:
         condition: service_started
     ports:
       - "80:80"

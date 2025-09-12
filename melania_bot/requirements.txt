@@ -1,0 +1,29 @@
+# MELANIA BOT - AI Automation Backend Requirements
+fastapi==0.104.1
+uvicorn==0.24.0
+pydantic==2.5.0
+httpx==0.25.2
+redis==5.0.1
+psycopg2-binary==2.9.9
+python-dotenv==1.0.0
+openai==1.3.7
+twilio==8.10.0
+sendgrid==6.10.0
+schedule==1.2.0
+langchain==0.0.340
+langchain-openai==0.0.2
+
+# WhatsApp Integration
+twilio==8.10.0
+
+# Email Integration  
+sendgrid==6.10.0
+
+# Database
+sqlalchemy==2.0.23
+alembic==1.13.0
+
+# Utilities
+python-jose==3.3.0
+passlib==1.7.4
+bcrypt==4.1.1

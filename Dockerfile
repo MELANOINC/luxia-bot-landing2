@@ -8,9 +8,9 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN apk add --no-cache curl
+RUN apk add --no-cache curl wget
 ENV NODE_ENV=production
 USER node
 EXPOSE 3000
-HEALTHCHECK CMD curl -f http://localhost:3000/health || exit 1
+HEALTHCHECK CMD wget --spider -q http://localhost:3000/health || exit 1
 CMD ["node", "server.js"]
