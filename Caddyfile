@@ -1,0 +1,11 @@
+# HTTPS (automático cuando DOMAIN apunta a este VPS)
+{$DOMAIN}, www.{$DOMAIN} {
+  encode gzip
+  reverse_proxy web:3000
+}
+
+# Fallback HTTP para testear antes de configurar DNS
+:80 {
+  encode gzip
+  reverse_proxy web:3000
+}
