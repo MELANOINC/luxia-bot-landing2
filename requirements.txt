@@ -1,0 +1,58 @@
+# Python Requirements for MELANIA BOT Integration
+# ===============================================
+#
+# Install with: pip install -r requirements.txt
+#
+# Core dependencies for event clocking integration
+
+# HTTP requests for API communication
+requests>=2.31.0
+
+# Environment variables management
+python-dotenv>=1.0.0
+
+# WhatsApp Bot Integration (Twilio)
+twilio>=8.2.0
+
+# Email automation
+sendgrid>=6.10.0
+
+# Date/time handling
+python-dateutil>=2.8.2
+
+# JSON Web Tokens (if using JWT authentication)
+PyJWT>=2.8.0
+
+# Async HTTP requests (for high-performance bots)
+aiohttp>=3.8.5
+
+# Data validation and parsing
+pydantic>=2.0.0
+
+# Database connectivity (if using direct DB access)
+psycopg2-binary>=2.9.7
+
+# Redis client (for caching)
+redis>=4.6.0
+
+# OpenAI integration (for AI-powered responses)
+openai>=1.0.0
+
+# Webhooks server (Flask for simple webhook receivers)
+Flask>=2.3.0
+
+# Scheduler for periodic tasks
+APScheduler>=3.10.0
+
+# Logging and monitoring
+structlog>=23.1.0
+
+# Development and testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+black>=23.0.0
+flake8>=6.0.0
+
+# Optional: FastAPI for advanced bot backends
+fastapi>=0.100.0
+uvicorn>=0.23.0

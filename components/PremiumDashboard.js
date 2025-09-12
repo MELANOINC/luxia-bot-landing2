@@ -1,18 +1,36 @@
 // Premium Dashboard Component
 // Full access to LUXIA CRM and NOTORIUS Smart Contracts
+// Enhanced with Real-time Event Clocking System
 
 class PremiumDashboard {
   constructor(userAccess) {
     this.userAccess = userAccess
     this.currentPlatform = 'luxia'
     this.sessionId = null
+    this.realTimeConnection = null
+    this.clockingClient = null
+    this.dashboardData = {
+      today: {},
+      recent_events: [],
+      top_sources: [],
+      hot_leads: []
+    }
     this.init()
   }
 
   init() {
+    this.initializeClockingClient()
     this.createDashboard()
     this.attachEventListeners()
     this.startSession()
+    this.setupRealTimeUpdates()
+    this.loadInitialData()
+  }
+
+  initializeClockingClient() {
+    // Initialize event clocking client for real-time data
+    const apiUrl = window.location.origin
+    this.clockingClient = new window.EventClockingClient(apiUrl)
   }
 
   createDashboard() {
@@ -39,6 +57,14 @@ class PremiumDashboard {
               <button class="tab-btn" data-platform="notorius" ${!this.userAccess.notoriusAccess ? 'disabled' : ''}>
                 ⚡ NOTORIUS
               </button>
+              <button class="tab-btn" data-platform="clocking">
+                📊 Event Monitor
+              </button>
+            </div>
+            
+            <div class="real-time-status">
+              <span class="status-dot" id="realtime-status"></span>
+              <span id="realtime-text">Conectando...</span>
             </div>
             
             <button class="btn btn-outline logout-btn">
@@ -47,7 +73,99 @@ class PremiumDashboard {
           </div>
         </div>
 
-        <!-- LUXIA CRM Full Platform -->
+        <!-- Real-time Event Clocking Platform -->
+        <div id="clocking-platform" class="platform-content">
+          <div class="platform-header">
+            <h2>📊 Event Monitor - Sistema de Clocking en Tiempo Real</h2>
+            <div class="real-time-indicator">
+              <span class="status-dot active"></span>
+              <span>Monitoreo en vivo</span>
+            </div>
+          </div>
+          
+          <!-- Real-time Stats Dashboard -->
+          <div class="clocking-stats-grid">
+            <div class="clocking-stat-card">
+              <div class="stat-icon">📈</div>
+              <div class="stat-content">
+                <div class="stat-value" id="events-today">-</div>
+                <div class="stat-label">Eventos Hoy</div>
+                <div class="stat-trend" id="events-trend">Cargando...</div>
+              </div>
+            </div>
+            
+            <div class="clocking-stat-card">
+              <div class="stat-icon">👥</div>
+              <div class="stat-content">
+                <div class="stat-value" id="leads-today">-</div>
+                <div class="stat-label">Leads Capturados</div>
+                <div class="stat-trend" id="leads-trend">Cargando...</div>
+              </div>
+            </div>
+            
+            <div class="clocking-stat-card">
+              <div class="stat-icon">💰</div>
+              <div class="stat-content">
+                <div class="stat-value" id="sales-today">-</div>
+                <div class="stat-label">Ventas Completadas</div>
+                <div class="stat-trend" id="sales-trend">Cargando...</div>
+              </div>
+            </div>
+            
+            <div class="clocking-stat-card">
+              <div class="stat-icon">💎</div>
+              <div class="stat-content">
+                <div class="stat-value" id="revenue-today">-</div>
+                <div class="stat-label">Ingresos Hoy</div>
+                <div class="stat-trend" id="revenue-trend">Cargando...</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Event Sources Performance -->
+          <div class="clocking-section">
+            <h3>🔗 Rendimiento por Fuente</h3>
+            <div class="sources-grid" id="sources-grid">
+              <div class="loading-placeholder">Cargando fuentes...</div>
+            </div>
+          </div>
+
+          <!-- Hot Leads Real-time -->
+          <div class="clocking-section">
+            <h3>🔥 Leads Calientes (Tiempo Real)</h3>
+            <div class="hot-leads-container">
+              <div class="leads-list" id="hot-leads-list">
+                <div class="loading-placeholder">Cargando leads...</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Events Stream -->
+          <div class="clocking-section">
+            <h3>⚡ Stream de Eventos Recientes</h3>
+            <div class="events-stream">
+              <div class="stream-controls">
+                <button class="btn btn-sm" id="pause-stream">⏸️ Pausar</button>
+                <button class="btn btn-sm" id="clear-stream">🗑️ Limpiar</button>
+                <select id="event-filter" class="form-control sm">
+                  <option value="">Todos los eventos</option>
+                  <option value="lead_captured">Leads capturados</option>
+                  <option value="payment_completed">Pagos completados</option>
+                  <option value="bot_interaction">Interacciones bot</option>
+                  <option value="demo_scheduled">Demos agendadas</option>
+                </select>
+              </div>
+              <div class="events-list" id="events-stream">
+                <div class="stream-placeholder">
+                  <div class="pulse-indicator"></div>
+                  <span>Esperando eventos en tiempo real...</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- LUXIA CRM Full Platform (existing) -->
         <div id="luxia-platform" class="platform-content active">
           <div class="platform-header">
             <h2>💼 LUXIA CRM - Centro de Control Completo</h2>
@@ -62,7 +180,7 @@ class PremiumDashboard {
             <div class="stat-card premium">
               <div class="stat-icon">👥</div>
               <div class="stat-content">
-                <div class="stat-value">1,247</div>
+                <div class="stat-value" id="luxia-total-clients">1,247</div>
                 <div class="stat-label">Clientes Totales</div>
                 <div class="stat-trend positive">+23 este mes</div>
               </div>
@@ -74,7 +192,7 @@ class PremiumDashboard {
             <div class="stat-card premium">
               <div class="stat-icon">💰</div>
               <div class="stat-content">
-                <div class="stat-value">€4.2M</div>
+                <div class="stat-value" id="luxia-aum">€4.2M</div>
                 <div class="stat-label">AUM Total</div>
                 <div class="stat-trend positive">+18.5% MTD</div>
               </div>
@@ -89,7 +207,7 @@ class PremiumDashboard {
             <div class="stat-card premium">
               <div class="stat-icon">🎯</div>
               <div class="stat-content">
-                <div class="stat-value">94.2%</div>
+                <div class="stat-value" id="luxia-conversion">94.2%</div>
                 <div class="stat-label">Tasa Conversión</div>
                 <div class="stat-trend positive">+5.7% vs mes anterior</div>
               </div>
@@ -98,7 +216,7 @@ class PremiumDashboard {
             <div class="stat-card premium">
               <div class="stat-icon">🤖</div>
               <div class="stat-content">
-                <div class="stat-value">847</div>
+                <div class="stat-value" id="luxia-ai-signals">847</div>
                 <div class="stat-label">Señales IA Hoy</div>
                 <div class="stat-trend positive">127 oportunidades</div>
               </div>
@@ -160,10 +278,10 @@ class PremiumDashboard {
             
             <div class="tool-section">
               <h3>📈 Pipeline Avanzado</h3>
-              <div class="advanced-pipeline">
+              <div class="advanced-pipeline" id="crm-pipeline">
                 <div class="pipeline-stage">
-                  <h4>Prospectos Fríos (24)</h4>
-                  <div class="leads-list">
+                  <h4>Prospectos Fríos (<span id="cold-leads-count">24</span>)</h4>
+                  <div class="leads-list" id="cold-leads">
                     <div class="lead-item">
                       <div class="lead-avatar">CM</div>
                       <div class="lead-info">
@@ -179,8 +297,8 @@ class PremiumDashboard {
                 </div>
                 
                 <div class="pipeline-stage">
-                  <h4>Calientes (12)</h4>
-                  <div class="leads-list">
+                  <h4>Calientes (<span id="hot-leads-count">12</span>)</h4>
+                  <div class="leads-list" id="hot-leads-crm">
                     <div class="lead-item hot">
                       <div class="lead-avatar">AR</div>
                       <div class="lead-info">
@@ -193,8 +311,8 @@ class PremiumDashboard {
                 </div>
                 
                 <div class="pipeline-stage">
-                  <h4>Cierre (8)</h4>
-                  <div class="leads-list">
+                  <h4>Cierre (<span id="closing-leads-count">8</span>)</h4>
+                  <div class="leads-list" id="closing-leads">
                     <div class="lead-item closing">
                       <div class="lead-avatar">RS</div>
                       <div class="lead-info">
@@ -210,7 +328,7 @@ class PremiumDashboard {
           </div>
         </div>
 
-        <!-- NOTORIUS Smart Contracts Full Platform -->
+        <!-- NOTORIUS Smart Contracts Full Platform (existing) -->
         <div id="notorius-platform" class="platform-content">
           <div class="platform-header">
             <h2>⚡ NOTORIUS - Smart Contracts Engine</h2>
@@ -364,11 +482,27 @@ class PremiumDashboard {
       this.logout()
     })
     
+    // Real-time event stream controls
+    const pauseBtn = document.getElementById('pause-stream')
+    const clearBtn = document.getElementById('clear-stream')
+    const filterSelect = document.getElementById('event-filter')
+
+    if (pauseBtn) {
+      pauseBtn.addEventListener('click', () => this.toggleEventStream())
+    }
+    
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => this.clearEventStream())
+    }
+
+    if (filterSelect) {
+      filterSelect.addEventListener('change', (e) => this.filterEvents(e.target.value))
+    }
+    
     // Contract actions
     document.querySelectorAll('.action-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.preventDefault()
-        // Handle contract actions
         console.log('Contract action clicked')
       })
     })
@@ -395,8 +529,356 @@ class PremiumDashboard {
       content.classList.toggle('active', content.id === `${platform}-platform`)
     })
     
+    // Load platform-specific data
+    if (platform === 'clocking') {
+      this.loadClockingData()
+    }
+    
     // Track session
     this.trackPlatformSwitch(platform)
+  }
+
+  async setupRealTimeUpdates() {
+    try {
+      // Setup real-time connection for events
+      this.realTimeConnection = this.clockingClient.createRealTimeConnection((eventData) => {
+        this.handleRealTimeEvent(eventData)
+      })
+
+      // Update status indicator
+      this.updateRealTimeStatus('connected', 'Conectado en tiempo real')
+
+      console.log('✅ Real-time connection established')
+    } catch (error) {
+      console.error('❌ Error setting up real-time updates:', error)
+      this.updateRealTimeStatus('error', 'Error de conexión')
+    }
+  }
+
+  updateRealTimeStatus(status, text) {
+    const statusDot = document.getElementById('realtime-status')
+    const statusText = document.getElementById('realtime-text')
+    
+    if (statusDot && statusText) {
+      statusDot.className = `status-dot ${status}`
+      statusText.textContent = text
+    }
+  }
+
+  handleRealTimeEvent(eventData) {
+    console.log('📡 Real-time event received:', eventData)
+
+    if (eventData.type === 'new_event') {
+      // Update dashboard stats
+      this.updateDashboardStats()
+      
+      // Add to event stream
+      this.addEventToStream(eventData)
+      
+      // Update hot leads if it's a high-score lead
+      if (eventData.event_type === 'lead_qualified' || eventData.event_type === 'lead_hot') {
+        this.updateHotLeads()
+      }
+
+      // Show notification for important events
+      if (['payment_completed', 'lead_hot', 'demo_scheduled'].includes(eventData.event_type)) {
+        this.showEventNotification(eventData)
+      }
+    }
+
+    if (eventData.type === 'stats_update') {
+      this.updateRealTimeStats(eventData)
+    }
+  }
+
+  async loadInitialData() {
+    try {
+      await this.updateDashboardStats()
+      await this.updateHotLeads()
+      await this.loadRecentEvents()
+      await this.updateSourcesPerformance()
+    } catch (error) {
+      console.error('Error loading initial dashboard data:', error)
+    }
+  }
+
+  async loadClockingData() {
+    // Load clocking platform specific data
+    await this.loadInitialData()
+  }
+
+  async updateDashboardStats() {
+    try {
+      const dashboard = await this.clockingClient.getDashboard()
+      
+      if (dashboard.success && dashboard.today) {
+        const today = dashboard.today
+        
+        document.getElementById('events-today').textContent = today.total_events || 0
+        document.getElementById('leads-today').textContent = today.leads_today || 0
+        document.getElementById('sales-today').textContent = today.sales_today || 0
+        document.getElementById('revenue-today').textContent = `€${(today.revenue_today || 0).toLocaleString()}`
+        
+        // Update trends (simplified)
+        document.getElementById('events-trend').textContent = '+' + (today.total_events || 0) + ' hoy'
+        document.getElementById('leads-trend').textContent = '+' + (today.leads_today || 0) + ' hoy'
+        document.getElementById('sales-trend').textContent = '+' + (today.sales_today || 0) + ' hoy'
+        document.getElementById('revenue-trend').textContent = '+€' + (today.revenue_today || 0).toLocaleString() + ' hoy'
+      }
+    } catch (error) {
+      console.error('Error updating dashboard stats:', error)
+    }
+  }
+
+  async updateHotLeads() {
+    try {
+      const dashboard = await this.clockingClient.getDashboard()
+      
+      if (dashboard.success && dashboard.hot_leads) {
+        const hotLeadsList = document.getElementById('hot-leads-list')
+        if (!hotLeadsList) return
+
+        hotLeadsList.innerHTML = dashboard.hot_leads.map(lead => `
+          <div class="hot-lead-item">
+            <div class="lead-avatar">${lead.customer_name?.substring(0, 2)?.toUpperCase() || 'XX'}</div>
+            <div class="lead-info">
+              <strong>${lead.customer_name || 'Anónimo'}</strong>
+              <span class="lead-email">${lead.customer_email}</span>
+              <span class="lead-score">Score: ${lead.score}/100</span>
+            </div>
+            <div class="lead-status ${lead.lead_status}">
+              ${lead.lead_status.toUpperCase()}
+            </div>
+            <div class="lead-actions">
+              <button class="action-btn" onclick="this.contactLead('${lead.customer_email}')">📞</button>
+              <button class="action-btn" onclick="this.emailLead('${lead.customer_email}')">📧</button>
+            </div>
+          </div>
+        `).join('')
+      }
+    } catch (error) {
+      console.error('Error updating hot leads:', error)
+    }
+  }
+
+  async loadRecentEvents() {
+    try {
+      const events = await this.clockingClient.getRecentEvents({ limit: 10 })
+      
+      if (events.success && events.events) {
+        const eventsStream = document.getElementById('events-stream')
+        if (!eventsStream) return
+
+        eventsStream.innerHTML = events.events.map(event => this.createEventItem(event)).join('')
+      }
+    } catch (error) {
+      console.error('Error loading recent events:', error)
+    }
+  }
+
+  async updateSourcesPerformance() {
+    try {
+      const dashboard = await this.clockingClient.getDashboard()
+      
+      if (dashboard.success && dashboard.top_sources) {
+        const sourcesGrid = document.getElementById('sources-grid')
+        if (!sourcesGrid) return
+
+        sourcesGrid.innerHTML = dashboard.top_sources.map(source => `
+          <div class="source-card">
+            <div class="source-header">
+              <h4>${source.source_name}</h4>
+              <span class="source-events">${source.events} eventos</span>
+            </div>
+            <div class="source-metrics">
+              <div class="metric">
+                <span class="metric-label">Leads</span>
+                <span class="metric-value">${source.leads}</span>
+              </div>
+              <div class="metric">
+                <span class="metric-label">Ventas</span>
+                <span class="metric-value">${source.sales}</span>
+              </div>
+            </div>
+          </div>
+        `).join('')
+      }
+    } catch (error) {
+      console.error('Error updating sources performance:', error)
+    }
+  }
+
+  createEventItem(event) {
+    const timeAgo = this.timeAgo(new Date(event.event_timestamp))
+    const eventIcon = this.getEventIcon(event.event_type)
+    const eventValue = event.event_value ? `€${event.event_value.toLocaleString()}` : ''
+
+    return `
+      <div class="event-item ${event.event_type}" data-event-type="${event.event_type}">
+        <div class="event-icon">${eventIcon}</div>
+        <div class="event-content">
+          <div class="event-header">
+            <strong>${this.getEventTitle(event.event_type)}</strong>
+            <span class="event-time">${timeAgo}</span>
+          </div>
+          <div class="event-details">
+            ${event.customer_name || event.customer_email || 'Cliente anónimo'}
+            ${eventValue ? ` - ${eventValue}` : ''}
+          </div>
+          <div class="event-source">${event.source_name}</div>
+        </div>
+      </div>
+    `
+  }
+
+  addEventToStream(eventData) {
+    const eventsStream = document.getElementById('events-stream')
+    if (!eventsStream) return
+
+    // Remove placeholder if exists
+    const placeholder = eventsStream.querySelector('.stream-placeholder')
+    if (placeholder) {
+      placeholder.remove()
+    }
+
+    // Create new event item
+    const eventItem = document.createElement('div')
+    eventItem.className = `event-item ${eventData.event_type} new-event`
+    eventItem.dataset.eventType = eventData.event_type
+    
+    const eventIcon = this.getEventIcon(eventData.event_type)
+    const eventValue = eventData.event_value ? `€${eventData.event_value.toLocaleString()}` : ''
+
+    eventItem.innerHTML = `
+      <div class="event-icon">${eventIcon}</div>
+      <div class="event-content">
+        <div class="event-header">
+          <strong>${this.getEventTitle(eventData.event_type)}</strong>
+          <span class="event-time">Ahora</span>
+        </div>
+        <div class="event-details">
+          ${eventData.customer_name || eventData.customer_email || 'Cliente anónimo'}
+          ${eventValue ? ` - ${eventValue}` : ''}
+        </div>
+        <div class="event-source">${eventData.source_name}</div>
+      </div>
+    `
+
+    // Add to top of stream
+    eventsStream.insertBefore(eventItem, eventsStream.firstChild)
+
+    // Remove old events (keep last 20)
+    const eventItems = eventsStream.querySelectorAll('.event-item')
+    if (eventItems.length > 20) {
+      eventItems[eventItems.length - 1].remove()
+    }
+
+    // Animate new event
+    setTimeout(() => eventItem.classList.remove('new-event'), 3000)
+  }
+
+  getEventIcon(eventType) {
+    const icons = {
+      'lead_captured': '👥',
+      'lead_qualified': '⭐',
+      'lead_hot': '🔥',
+      'demo_scheduled': '📅',
+      'payment_initiated': '💳',
+      'payment_completed': '💰',
+      'bot_interaction': '🤖',
+      'whatsapp_message': '💬',
+      'email_opened': '📧',
+      'email_clicked': '🔗'
+    }
+    return icons[eventType] || '📊'
+  }
+
+  getEventTitle(eventType) {
+    const titles = {
+      'lead_captured': 'Lead Capturado',
+      'lead_qualified': 'Lead Calificado',
+      'lead_hot': 'Lead Caliente',
+      'demo_scheduled': 'Demo Agendada',
+      'payment_initiated': 'Pago Iniciado',
+      'payment_completed': 'Pago Completado',
+      'bot_interaction': 'Interacción Bot',
+      'whatsapp_message': 'Mensaje WhatsApp',
+      'email_opened': 'Email Abierto',
+      'email_clicked': 'Email Clickeado'
+    }
+    return titles[eventType] || 'Evento'
+  }
+
+  showEventNotification(eventData) {
+    const notification = document.createElement('div')
+    notification.className = 'event-notification'
+    notification.innerHTML = `
+      <div class="notification-icon">${this.getEventIcon(eventData.event_type)}</div>
+      <div class="notification-content">
+        <strong>${this.getEventTitle(eventData.event_type)}</strong>
+        <span>${eventData.customer_name || eventData.customer_email}</span>
+      </div>
+    `
+
+    document.body.appendChild(notification)
+
+    // Remove after 5 seconds
+    setTimeout(() => {
+      notification.classList.add('fade-out')
+      setTimeout(() => notification.remove(), 300)
+    }, 5000)
+  }
+
+  toggleEventStream() {
+    const pauseBtn = document.getElementById('pause-stream')
+    if (this.realTimeConnection) {
+      // Implementation depends on the real-time connection type
+      pauseBtn.textContent = pauseBtn.textContent.includes('Pausar') ? '▶️ Reanudar' : '⏸️ Pausar'
+    }
+  }
+
+  clearEventStream() {
+    const eventsStream = document.getElementById('events-stream')
+    if (eventsStream) {
+      eventsStream.innerHTML = `
+        <div class="stream-placeholder">
+          <div class="pulse-indicator"></div>
+          <span>Stream limpiado - esperando eventos...</span>
+        </div>
+      `
+    }
+  }
+
+  filterEvents(eventType) {
+    const eventItems = document.querySelectorAll('.event-item')
+    eventItems.forEach(item => {
+      if (!eventType || item.dataset.eventType === eventType) {
+        item.style.display = 'flex'
+      } else {
+        item.style.display = 'none'
+      }
+    })
+  }
+
+  timeAgo(date) {
+    const now = new Date()
+    const diffInSeconds = Math.floor((now - date) / 1000)
+    
+    if (diffInSeconds < 60) return 'Ahora'
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m`
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h`
+    return `${Math.floor(diffInSeconds / 86400)}d`
+  }
+
+  updateRealTimeStats(statsData) {
+    // Update real-time statistics from server-sent events
+    if (statsData.recent_events) {
+      const indicator = document.querySelector('.real-time-indicator .status-dot')
+      if (indicator) {
+        indicator.classList.add('pulse')
+        setTimeout(() => indicator.classList.remove('pulse'), 1000)
+      }
+    }
   }
 
   async startSession() {
@@ -421,7 +903,6 @@ class PremiumDashboard {
   }
 
   async trackPlatformSwitch(platform) {
-    // Track platform usage for analytics
     console.log(`Platform switched to: ${platform}`)
   }
 
@@ -440,10 +921,8 @@ class PremiumDashboard {
     const action = button.textContent.trim()
     
     if (action === 'Ejecutar') {
-      // Show execution modal
       this.showExecutionModal(recommendation)
     } else {
-      // Show details
       console.log('Show recommendation details')
     }
   }
@@ -467,14 +946,12 @@ class PremiumDashboard {
     
     modal.querySelector('.cancel').addEventListener('click', () => modal.remove())
     modal.querySelector('.confirm').addEventListener('click', () => {
-      // Execute recommendation
       this.executeRecommendation(recommendation)
       modal.remove()
     })
   }
 
   async executeRecommendation(recommendation) {
-    // Simulate execution
     const toast = document.createElement('div')
     toast.className = 'success-toast'
     toast.textContent = '✅ Recomendación ejecutada con éxito'
@@ -485,7 +962,10 @@ class PremiumDashboard {
 
   async logout() {
     try {
-      // End session
+      if (this.realTimeConnection) {
+        this.realTimeConnection.close()
+      }
+
       if (this.sessionId) {
         const startTime = new Date(this.sessionStartTime || Date.now() - 30*60*1000)
         const duration = Math.floor((Date.now() - startTime) / 60000)
@@ -493,8 +973,6 @@ class PremiumDashboard {
       }
       
       await window.MelanoAuth.signOut()
-      
-      // Reload page to reset state
       window.location.reload()
       
     } catch (error) {
