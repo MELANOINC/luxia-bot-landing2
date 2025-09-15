@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "db:ping": "node scripts/db-check.js"
+    "db:ping": "node scripts/db-check.js",
+    "verify": "node scripts/verify-setup.js"
   },
   "keywords": [],
   "author": "",
