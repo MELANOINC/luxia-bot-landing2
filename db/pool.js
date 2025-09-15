@@ -47,8 +47,15 @@ function getSslOption(mode) {
     return false;
   }
   if (m === 'require' || m === 'true' || m === 'yes') {
-    // Para evitar error de certificado autofirmado, se puede usar { rejectUnauthorized: false }
-    return { rejectUnauthorized: false };
+    // Para Supabase y evitar errores de certificado, usar configuración más permisiva
+    return { 
+      rejectUnauthorized: false,
+      // Agregar configuración adicional para compatibilidad
+      ca: undefined,
+      cert: undefined,
+      key: undefined,
+      checkServerIdentity: () => undefined
+    };
   }
   return false; 
 }

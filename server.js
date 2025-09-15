@@ -144,6 +144,7 @@ app.get('/logout', (req, res) => {
 // Webhook endpoint para N8N
 app.post('/webhook/n8n', async (req, res) => {
   try {
+<<<<<<< HEAD
     console.log('📨 Webhook N8N recibido:', req.body);
     
     // Procesar los datos del webhook
@@ -179,4 +180,40 @@ app.get('/webhook/n8n', (req, res) => {
   });
 });
 
+=======
+    // Verificar token de N8N
+    const authHeader = req.headers.authorization;
+    const expectedToken = process.env.N8N_WEBHOOK_TOKEN || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5M2YzOWUwYy01MTQ2LTRhNTEtYmMzMy1hYWM0MmNhODJkZDMiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzU3OTI1MzI1LCJleHAiOjE3NjA1MDA4MDB9.dfNaflEIfMgDKQrgHP8tVcC0YhXXUfXawRx3sZLJF_Q';
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Token de autorización requerido' });
+    }
+    
+    const token = authHeader.substring(7); // Remover 'Bearer '
+    
+    if (token !== expectedToken) {
+      return res.status(401).json({ error: 'Token inválido' });
+    }
+    
+    // Procesar datos del webhook
+    const webhookData = req.body;
+    console.log('Webhook N8N recibido:', webhookData);
+    
+    // Aquí puedes procesar los datos según tus necesidades
+    // Por ejemplo, guardar en BD, enviar email, etc.
+    
+    // Respuesta de éxito
+    res.json({ 
+      ok: true, 
+      message: 'Webhook procesado correctamente',
+      received: webhookData 
+    });
+    
+  } catch (error) {
+    console.error('Error en webhook N8N:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+>>>>>>> 550ecfe02133c390962d632c8b945381abfdfc7f
 app.listen(port, host, () => console.log(`Servidor en http://${host}:${port}`));
