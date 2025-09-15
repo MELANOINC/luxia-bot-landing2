@@ -93,6 +93,40 @@ SESSION_SECRET=tu-secreto-para-sesiones
 - `GET /profile`: Ruta protegida que muestra info del usuario autenticado.
 - `GET /logout`: Cierra la sesión y redirige a `/`.
 
+## Webhook N8N
+
+El servidor incluye un endpoint para recibir webhooks de N8N.
+
+### Configuración del Webhook
+
+Asegúrate de tener en `.env`:
+
+```bash
+N8N_WEBHOOK_TOKEN=tu-token-de-n8n-aqui
+```
+
+### Endpoint del Webhook
+
+- `POST /webhook/n8n`: Recibe datos de N8N con autenticación Bearer token.
+
+### Uso en N8N
+
+1. Crea un nodo "HTTP Request" en tu workflow de N8N.
+2. Configura:
+   - Method: POST
+   - URL: `http://tu-servidor:puerto/webhook/n8n`
+   - Headers: `Authorization: Bearer TU_TOKEN_N8N`
+   - Body: Los datos que quieres enviar
+
+### Ejemplo de Request
+
+```bash
+curl -X POST http://127.0.0.1:3000/webhook/n8n \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Datos desde N8N", "data": {"key": "value"}}'
+```
+
 ## Configuración de Base de Datos (SQL)
 
 Para configurar la base de datos PostgreSQL (Supabase), ejecuta el script `init.sql` en tu panel de Supabase o usando psql:
