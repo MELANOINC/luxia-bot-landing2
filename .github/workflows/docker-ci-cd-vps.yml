@@ -1,0 +1,290 @@
+name: 🚀 CI/CD Docker - Despliegue Automático a VPS
+
+"on":
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Entorno de despliegue'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+        - production
+        - staging
+
+env:
+  # Configuración centralizada de variables
+  DOCKER_IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/luxia-bot-landing2
+  DOCKER_TAG: latest
+  CONTAINER_NAME: luxia-bot-landing2
+  HEALTH_CHECK_URL: http://localhost:3000/health
+  DEPLOYMENT_TIMEOUT: 300
+
+jobs:
+  # Job 1: Construcción y Testing
+  build-and-test:
+    name: 🔨 Construcción y Validación
+    runs-on: ubuntu-latest
+    
+    outputs:
+      image-digest: ${{ steps.build.outputs.digest }}
+      
+    steps:
+      - name: 📂 Checkout del Código Fuente
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🐳 Configurar Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: network=host
+
+      - name: 🔐 Autenticación en DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: 🏗️ Construcción y Push de Imagen Docker
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_TAG }}
+            ${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}
+          labels: |
+            org.opencontainers.image.title=Luxia Bot Landing
+            org.opencontainers.image.description=Landing page para Luxia Bot con CRM inmobiliario
+            org.opencontainers.image.source=${{ github.repositoryUrl }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: 🧪 Verificación de Imagen Docker
+        run: |
+          echo "🔍 Verificando imagen construida..."
+          docker pull ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_TAG }}
+          docker inspect ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_TAG }}
+          echo "✅ Imagen verificada correctamente"
+
+  # Job 2: Despliegue a VPS
+  deploy-to-vps:
+    name: 🚀 Despliegue a Servidor VPS
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    
+    environment: 
+      name: ${{ github.event.inputs.environment || 'production' }}
+      url: ${{ steps.deploy.outputs.deployment-url }}
+    
+    steps:
+      - name: 📂 Checkout para Scripts de Despliegue
+        uses: actions/checkout@v4
+
+      - name: 🔄 Preparación del Entorno de Despliegue
+        run: |
+          echo "🎯 Iniciando despliegue en entorno: ${{ github.event.inputs.environment || 'production' }}"
+          echo "📦 Imagen: ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_TAG }}"
+          echo "🕒 Timestamp: $(date)"
+
+      - name: 🔐 Configuración de Clave SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+
+      - name: 📋 Verificación de Conectividad del Servidor
+        run: |
+          echo "🔍 Verificando conectividad con el servidor VPS..."
+          ssh -o ConnectTimeout=10 ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "echo '✅ Conexión SSH establecida correctamente'"
+
+      - name: 🛠️ Preparación del Servidor VPS
+        run: |
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+            echo "🔧 Preparando servidor para despliegue..."
+            
+            # Verificar Docker está instalado
+            if ! command -v docker &> /dev/null; then
+              echo "❌ Docker no está instalado. Instalando..."
+              curl -fsSL https://get.docker.com -o get-docker.sh
+              sudo sh get-docker.sh
+              sudo usermod -aG docker $USER
+            fi
+            
+            # Verificar Docker Compose está disponible
+            if ! docker compose version &> /dev/null; then
+              echo "❌ Docker Compose no está disponible. Instalando..."
+              sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+              sudo chmod +x /usr/local/bin/docker-compose
+            fi
+            
+            # Crear directorio de aplicación si no existe
+            sudo mkdir -p /opt/${{ env.CONTAINER_NAME }}
+            sudo chown $USER:$USER /opt/${{ env.CONTAINER_NAME }}
+            
+            echo "✅ Servidor preparado correctamente"
+          EOF
+
+      - name: 🚀 Despliegue de la Aplicación
+        id: deploy
+        run: |
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << EOF
+            echo "🚀 Iniciando despliegue de Luxia Bot..."
+            
+            cd /opt/${{ env.CONTAINER_NAME }}
+            
+            # Backup de contenedor anterior si existe
+            if docker ps -a | grep -q ${{ env.CONTAINER_NAME }}; then
+              echo "📦 Creando backup del contenedor anterior..."
+              docker tag ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_TAG }} ${{ env.DOCKER_IMAGE_NAME }}:backup-\$(date +%Y%m%d-%H%M%S) || true
+            fi
+            
+            # Descargar nueva imagen
+            echo "⬇️ Descargando imagen actualizada..."
+            docker pull ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_TAG }}
+            
+            # Detener contenedor actual
+            echo "⏹️ Deteniendo contenedor actual..."
+            docker stop ${{ env.CONTAINER_NAME }} || true
+            docker rm ${{ env.CONTAINER_NAME }} || true
+            
+            # Iniciar nuevo contenedor con configuración robusta
+            echo "▶️ Iniciando nuevo contenedor..."
+            docker run -d \
+              --name ${{ env.CONTAINER_NAME }} \
+              --restart unless-stopped \
+              -p 80:3000 \
+              -p 443:3000 \
+              --health-cmd="curl -f ${{ env.HEALTH_CHECK_URL }} || exit 1" \
+              --health-interval=30s \
+              --health-timeout=10s \
+              --health-retries=3 \
+              --health-start-period=60s \
+              -e NODE_ENV=production \
+              ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_TAG }}
+            
+            echo "✅ Contenedor iniciado correctamente"
+          EOF
+
+      - name: 🏥 Verificación de Health Check
+        run: |
+          echo "🔍 Verificando estado de la aplicación..."
+          
+          # Esperar a que el contenedor esté saludable
+          timeout ${{ env.DEPLOYMENT_TIMEOUT }} bash -c '
+            while true; do
+              health_status=$(ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "docker inspect --format=\"{{.State.Health.Status}}\" ${{ env.CONTAINER_NAME }}" 2>/dev/null || echo "unhealthy")
+              echo "Estado actual: $health_status"
+              
+              if [ "$health_status" = "healthy" ]; then
+                echo "✅ Aplicación desplegada y funcionando correctamente"
+                break
+              elif [ "$health_status" = "unhealthy" ]; then
+                echo "❌ Health check falló"
+                exit 1
+              fi
+              
+              echo "⏳ Esperando health check... (reintentando en 10s)"
+              sleep 10
+            done
+          '
+
+      - name: 🧹 Limpieza Post-Despliegue
+        run: |
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+            echo "🧹 Ejecutando limpieza del sistema..."
+            
+            # Limpiar imágenes Docker no utilizadas (mantener backups recientes)
+            docker image prune -f
+            
+            # Limpiar contenedores detenidos
+            docker container prune -f
+            
+            # Mostrar estado final
+            echo "📊 Estado final del sistema:"
+            docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+            df -h /
+            
+            echo "✅ Limpieza completada"
+          EOF
+
+      - name: 📢 Notificación de Despliegue Exitoso
+        run: |
+          echo "🎉 DESPLIEGUE COMPLETADO EXITOSAMENTE"
+          echo "🌐 Aplicación disponible en: http://${{ secrets.SERVER_HOST }}"
+          echo "📦 Imagen desplegada: ${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_TAG }}"
+          echo "🕒 Completado en: $(date)"
+
+  # Job 3: Rollback en caso de fallo (manual)
+  rollback:
+    name: 🔄 Rollback de Emergencia
+    runs-on: ubuntu-latest
+    if: failure() && github.ref == 'refs/heads/main'
+    needs: deploy-to-vps
+    when: manual
+    
+    steps:
+      - name: 🚨 Ejecutar Rollback de Emergencia
+        run: |
+          echo "🚨 Iniciando rollback de emergencia..."
+          
+          ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+            # Buscar imagen de backup más reciente
+            BACKUP_IMAGE=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep "${{ env.DOCKER_IMAGE_NAME }}:backup-" | head -1)
+            
+            if [ -n "$BACKUP_IMAGE" ]; then
+              echo "🔄 Rollback a: $BACKUP_IMAGE"
+              
+              # Detener contenedor actual
+              docker stop ${{ env.CONTAINER_NAME }} || true
+              docker rm ${{ env.CONTAINER_NAME }} || true
+              
+              # Restaurar desde backup
+              docker run -d \
+                --name ${{ env.CONTAINER_NAME }} \
+                --restart unless-stopped \
+                -p 80:3000 \
+                -p 443:3000 \
+                $BACKUP_IMAGE
+              
+              echo "✅ Rollback completado"
+            else
+              echo "❌ No se encontró imagen de backup"
+              exit 1
+            fi
+          EOF
+
+# Instrucciones para VPS estándar (Hostinger, DigitalOcean, etc.)
+# 
+# REQUISITOS PREVIOS EN EL SERVIDOR:
+# 1. Ubuntu 20.04+ / CentOS 8+ / Debian 11+
+# 2. Acceso root o sudo
+# 3. Puerto 80 y 443 abiertos
+# 
+# CONFIGURACIÓN DE SECRETS EN GITHUB:
+# - DOCKERHUB_USERNAME: Tu usuario de DockerHub
+# - DOCKERHUB_TOKEN: Token de acceso de DockerHub
+# - SERVER_HOST: IP o dominio de tu VPS
+# - SERVER_USER: Usuario SSH (ej: root, ubuntu)
+# - SERVER_SSH_KEY: Clave privada SSH (formato PEM)
+# 
+# COMANDOS DE PREPARACIÓN DEL SERVIDOR:
+# sudo ufw allow 80/tcp
+# sudo ufw allow 443/tcp  
+# sudo ufw allow 22/tcp
+# sudo ufw --force enable
+# 
+# VERIFICACIÓN POST-DESPLIEGUE:
+# curl -I http://TU_IP_VPS
+# docker logs luxia-bot-landing2
+# docker exec luxia-bot-landing2 curl -f http://localhost:3000/health

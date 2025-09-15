@@ -1,5 +1,7 @@
 #!/bin/bash
 
+#!/bin/bash
+
 # Script de despliegue para el proyecto Node.js con PostgreSQL
 # Asegúrate de tener Node.js, npm y PM2 instalados en el servidor
 # También configura las variables de entorno (.env) antes de ejecutar
