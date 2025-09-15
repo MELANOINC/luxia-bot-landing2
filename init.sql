@@ -38,8 +38,12 @@ CREATE TRIGGER update_items_updated_at
     BEFORE UPDATE ON public.items
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Insertar datos de ejemplo (opcional)
-INSERT INTO public.items (name, description) VALUES
-    ('Item de ejemplo 1', 'Descripción del primer item'),
-    ('Item de ejemplo 2', 'Descripción del segundo item')
-ON CONFLICT DO NOTHING;
+-- Tabla para logs de webhooks (opcional)
+CREATE TABLE IF NOT EXISTS public.webhook_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    data JSONB,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Índice para webhook_logs
+CREATE INDEX IF NOT EXISTS idx_webhook_logs_created_at ON public.webhook_logs(created_at DESC);eeeeeeee

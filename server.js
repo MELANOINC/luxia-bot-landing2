@@ -3,12 +3,14 @@ const express = require('express');
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const session = require('express-session');
+const cors = require('cors');
 const { pool } = require('./db/pool');
 const app = express();
 const port = Number(process.env.PORT || 5678);
 const host = process.env.HOST || '127.0.0.1';
 
 // Middleware
+app.use(cors()); // <-- FALTABA ESTO! Para webhooks de N8N
 app.use(express.json());
 app.use(session({
   secret: process.env.SESSION_SECRET || 'tu-secreto-aqui',
@@ -136,6 +138,44 @@ app.get('/profile', (req, res) => {
 app.get('/logout', (req, res) => {
   req.logout(() => {
     res.redirect('/');
+  });
+});
+
+// Webhook endpoint para N8N
+app.post('/webhook/n8n', async (req, res) => {
+  try {
+    console.log('📨 Webhook N8N recibido:', req.body);
+    
+    // Procesar los datos del webhook
+    const data = req.body;
+    
+    // Aquí puedes guardar en BD o procesar los datos
+    // Ejemplo: guardar en tabla de logs
+    if (data && Object.keys(data).length > 0) {
+      // Opcional: guardar en BD
+      // await pool.query('INSERT INTO webhook_logs (data, created_at) VALUES ($1, NOW())', [JSON.stringify(data)]);
+      
+      res.json({ 
+        ok: true, 
+        message: 'Webhook procesado correctamente',
+        received: data 
+      });
+    } else {
+      res.json({ ok: true, message: 'Webhook vacío recibido' });
+    }
+  } catch (error) {
+    console.error('❌ Error en webhook N8N:', error);
+    res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
+// Endpoint GET para testear webhook
+app.get('/webhook/n8n', (req, res) => {
+  res.json({ 
+    ok: true, 
+    message: 'Webhook N8N endpoint activo',
+    method: 'GET (para testing)',
+    postEndpoint: '/webhook/n8n'
   });
 });
 
