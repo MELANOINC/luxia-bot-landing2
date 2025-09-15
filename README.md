@@ -1,156 +1,139 @@
-# 🚀 LUXIA BOT™ - MELANO INC
-## CRM y Embudos de Ventas para Agencias Inmobiliarias
-### ⚛️ Integrado con IA Cuántica del ecosistema Melano Inc
+# luxia-bot-landing2
 
-### ✅ DEMO COMPLETAMENTE PROBADA Y FUNCIONAL
+Servidor Express con conexión a Postgres (Supabase).
 
----
+## Requisitos
+- Node.js 18+
 
-## 📋 CONTENIDO DEL PAQUETE
+## Configuración
+1. Copia `.env.example` a `.env` y edita `DATABASE_URL` con tu contraseña real de Supabase.
+   - Ejemplo: `postgres://postgres:YOUR_PASSWORD@db.qgisablesklaoydfbljg.supabase.co:5432/postgres?sslmode=require`
+2. Instala dependencias:
 
-- `index.html` - Landing principal con hero, servicios, embudo, precios y contacto
-- `styles.css` - Diseño responsive con branding Melano Inc
-- `config.js` - Configuración para n8n y servicios externos
-- `script.js` - Lógica de formularios, validaciones y CRM
-- `README.md` - Este archivo con instrucciones
-
----
-
-## 🎯 FUNCIONALIDADES PROBADAS
-
-### ✅ Frontend/Web:
-- **Navegación:** Menú con scroll suave a todas las secciones
-- **Hero Section:** Demo visual del CRM con inbox y pipeline
-- **Servicios:** 3 tarjetas de automatización con IA
-- **Embudo:** 4 pasos del proceso automatizado
-- **Precios:** 3 planes (Starter $297, Pro $997, Agency)
-- **Formulario:** Validaciones completas y detección de leads calientes
-- **CTAs:** Todos los botones navegan correctamente
-- **WhatsApp:** Botón flotante funcional
-- **Responsive:** Adaptado para todas las resoluciones
-
-### ✅ Backend/Integración:
-- **n8n Ready:** Preparado para conectar flujos existentes
-- **Lead Capture:** `/lead-capture` endpoint configurado
-- **Lead Hot:** `/lead-hot` para presupuestos >$1000
-- **CRM Sync:** `/crm-sync` para sincronización
-- **Quantum AI:** Análisis inteligente de leads mediante IA cuántica de Melano Inc
-- **Validaciones:** Manejo de errores y mensajes al usuario
-- **Calendly:** Integración para agendar demos
-
----
-
-## 🛠️ INSTALACIÓN Y CONFIGURACIÓN
-
-### 1. Configurar n8n (OBLIGATORIO)
-Editar `config.js`:
-```javascript
-const CONFIG = {
-    N8N_BASE_URL: 'https://tu-n8n-instance.com', // ⚠️ CAMBIAR ESTA URL
-    WHATSAPP_NUMBER: '+506XXXXXXXX',              // ⚠️ AGREGAR TU NÚMERO
-    CALENDLY_URL: 'https://calendly.com/tu-usuario' // ⚠️ AGREGAR TU CALENDLY
-};
+```powershell
+npm install
 ```
 
-### 2. Subir a Hosting
-**Opciones recomendadas:**
-- **Netlify:** Drag & drop todos los archivos
-- **Vercel:** Conectar con GitHub
-- **Cloudflare Pages:** Deploy directo
-- **Hosting tradicional:** Subir vía FTP
+## Ejecutar
+- Iniciar servidor:
 
-### 3. Conectar n8n Workflows
-Los flujos existentes deben estar en:
-- `POST /lead-capture` - Captura general de leads
-- `POST /lead-hot` - Leads con presupuesto >$1000
-- `POST /crm-sync` - Sincronización con CRM
+```powershell
+npm start
+```
 
----
+- Probar ping a la base de datos (desde script):
 
-## 📊 FLUJO DE LEADS
+```powershell
+npm run db:ping
+```
 
-### Lead Normal (< $1000):
-1. Formulario → `/lead-capture`
-2. Guarda en Google Sheets
-3. Email de confirmación
-4. Seguimiento estándar
+- Probar ping a la base desde el servidor:
+  - Abre `http://127.0.0.1:5678/db-ping`
 
-### Lead Caliente (≥ $1000):
-1. Formulario → `/lead-hot`
-2. Alerta inmediata por WhatsApp
-3. Prioridad alta en CRM
-4. Seguimiento acelerado
+Si ves `{ ok: true, result: { ok: 1 } }`, la conexión está funcionando.
 
----
+## Notas
+- Supabase requiere SSL. El código configura `ssl: { rejectUnauthorized: false }` para evitar errores de certificado autofirmado.
+- Nunca subas tu `.env` al repositorio.
 
-## 🎨 PERSONALIZACIÓN
+## Endpoint de ejemplo: `/items`
+- Lista hasta 20 filas de `public.items` si la tabla existe.
+- Si no existe, devuelve 404 con una guía para crearla.
 
-### Colores (en `styles.css`):
-```css
-:root {
-    --primary: #5b2bc4;     /* Morado Melano */
-    --secondary: #00d4aa;   /* Verde WhatsApp */
-    --accent: #ff6b35;      /* Naranja accent */
+SQL de ejemplo para crear la tabla:
+```sql
+create extension if not exists pgcrypto; -- para gen_random_uuid()
+create table if not exists public.items (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  created_at timestamptz default now()
+);
+```
+
+### POST `/items`
+- Inserta un nuevo ítem en `public.items`.
+- Requiere body JSON con campo `name` (string no vacío).
+- Responde con el registro creado (201) o error (400/404/500).
+
+Ejemplo de request:
+```bash
+curl -X POST http://127.0.0.1:3000/items \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Nuevo ítem"}'
+```
+
+Respuesta exitosa:
+```json
+{
+  "ok": true,
+  "item": {
+    "id": "uuid-generado",
+    "name": "Nuevo ítem",
+    "created_at": "2025-09-15T12:00:00.000Z"
+  }
 }
 ```
 
-### Textos:
-- Editar directamente en `index.html`
-- Mantener estructura SEO existente
+## Autenticación con Google OAuth
 
----
+El servidor incluye autenticación OAuth con Google para proteger rutas.
 
-## 🚀 LANZAMIENTO
+### Configuración
+Asegúrate de tener en `.env`:
+```
+GOOGLE_CLIENT_ID=tu-client-id
+GOOGLE_CLIENT_SECRET=tu-client-secret
+GOOGLE_API_KEY=tu-api-key
+SESSION_SECRET=tu-secreto-para-sesiones
+```
 
-### Pre-lanzamiento:
-1. ✅ Configurar URLs en `config.js`
-2. ✅ Probar formulario con n8n
-3. ✅ Verificar WhatsApp y Calendly
-4. ✅ Test en móvil y desktop
+### Endpoints de autenticación
+- `GET /auth/google`: Inicia el flujo de autenticación con Google.
+- `GET /auth/google/callback`: Callback de Google (redirige a `/profile` si exitoso).
+- `GET /profile`: Ruta protegida que muestra info del usuario autenticado.
+- `GET /logout`: Cierra la sesión y redirige a `/`.
 
-### Post-lanzamiento:
-- Monitorear conversiones en n8n
-- Optimizar según métricas
-- A/B testing de CTAs
+## Configuración de Base de Datos (SQL)
 
----
+Para configurar la base de datos PostgreSQL (Supabase), ejecuta el script `init.sql` en tu panel de Supabase o usando psql:
 
-## 📈 MÉTRICAS CLAVE
+1. En Supabase: Ve a SQL Editor y pega el contenido de `init.sql`.
+2. Localmente: `psql -U postgres -d tu_base_de_datos -f init.sql`
 
-- **Conversión formulario:** Meta >3%
-- **Leads calientes:** Presupuesto ≥$1000
-- **Time to response:** <2 horas para leads calientes
-- **Demo booking rate:** Meta >15%
+Esto creará las tablas `public.items` y `public.users`, índices y triggers necesarios.
 
----
+## Despliegue (Deploy)
 
-## 🔧 SOPORTE TÉCNICO
+Para desplegar la aplicación en un servidor:
 
-### Problemas comunes:
-1. **Formulario no envía:** Verificar N8N_BASE_URL
-2. **WhatsApp no abre:** Verificar WHATSAPP_NUMBER
-3. **Calendly no carga:** Verificar CALENDLY_URL
+1. **Requisitos del servidor**:
+   - Node.js 18+
+   - PM2 (instala con `npm install -g pm2`)
+   - Git (opcional, para actualizaciones)
 
-### Logs de debug:
-- Abrir DevTools (F12)
-- Ver Console para errores
-- Network tab para requests fallidos
+2. **Configurar variables de entorno**:
+   - Copia `.env` al servidor y configura las credenciales reales.
 
----
+3. **Ejecutar despliegue**:
 
-## 📞 CONTACTO MELANO INC
+   ```bash
+   chmod +x deploy.sh
+   ./deploy.sh
+   ```
 
-- **Proyecto:** Luxia Bot™ CRM Inmobiliario
-- **Versión:** 1.0.0 - Producción Ready
-- **Fecha:** Agosto 2025
-- **Status:** ✅ COMPLETAMENTE FUNCIONAL
+4. **Verificar**:
 
----
+   ```bash
+   pm2 status
+   pm2 logs luxia-bot-landing2
+   ```
 
-**🎉 ¡LISTO PARA VENDER Y GENERAR INGRESOS!**
+El script detendrá la app actual, actualizará el código, instalará dependencias y reiniciará con PM2.
 
----
+### Despliegue en plataformas en la nube
 
-## 🔒 Despliegue en Producción
+- **Railway**: Conecta tu repo de GitHub, configura variables de entorno.
+- **Render**: Usa el Dockerfile si tienes uno, o configura como web service.
+- **Heroku**: `git push heroku main` (necesitas Heroku CLI).
 
-Consulta `PRODUCTION.md` para conocer el entorno Docker con PostgreSQL, Redis y Nginx listo para producción.
+Asegúrate de configurar las variables de entorno en la plataforma de despliegue.

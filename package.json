@@ -1,19 +1,21 @@
 {
   "name": "luxia-bot-landing2",
   "version": "1.0.0",
-  "description": "Luxia Bot landing with production-ready Docker setup",
+  "description": "Servidor Express con conexión a Supabase Postgres",
   "main": "server.js",
-  "type": "module",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js",
-    "test": "node -e \"console.log('No tests')\""
+    "db:ping": "node scripts/db-check.js"
   },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
   "dependencies": {
-    "@supabase/supabase-js": "^2.55.0",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
-    "ioredis": "^5.3.2",
-    "pg": "^8.11.1"
+    "express-session": "^1.18.2",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
+    "pg": "^8.12.0"
   }
 }

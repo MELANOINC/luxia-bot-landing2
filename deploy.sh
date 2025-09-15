@@ -1,30 +1,40 @@
-#!/bin/sh
-set -e
+#!/bin/bash
 
-echo "Building containers..."
-docker compose pull
-docker compose build --no-cache
+# Script de despliegue para el proyecto Node.js con PostgreSQL
+# Asegúrate de tener Node.js, npm y PM2 instalados en el servidor
+# También configura las variables de entorno (.env) antes de ejecutar
 
-echo "Starting services..."
-# Ensure this script is executable: chmod +x deploy.sh
-#!/bin/sh
-set -e
+echo "Iniciando despliegue..."
 
-# Check for required commands
-command -v docker >/dev/null 2>&1 || { echo >&2 "Error: docker is not installed or not in PATH."; exit 1; }
-command -v docker compose >/dev/null 2>&1 || { echo >&2 "Error: docker compose is not available. Please install Docker Compose v2 or later."; exit 1; }
+# Detener la aplicación actual si está corriendo
+echo "Deteniendo aplicación actual..."
+pm2 stop luxia-bot-landing2 || echo "No hay aplicación corriendo"
 
-echo "Building containers..."
-if ! docker compose pull; then
-  echo "Error: Failed to pull containers."; exit 1
-fi
-if ! docker compose build --no-cache; then
-  echo "Error: Failed to build containers."; exit 1
-fi
+# Actualizar código desde git (si usas git)
+echo "Actualizando código..."
+git pull origin main || echo "No se pudo actualizar desde git (asegúrate de tener git configurado)"
 
-echo "Starting services..."
-if ! docker compose up -d; then
-  echo "Error: Failed to start services."; exit 1
-fi
+# Instalar dependencias
+echo "Instalando dependencias..."
+npm install
 
-echo "Deployment complete."
+# Ejecutar migraciones de base de datos si es necesario
+echo "Configurando base de datos..."
+# Si tienes un script para migraciones, ejecutalo aquí
+# Ejemplo: npm run migrate
+# O ejecuta el SQL manualmente en Supabase
+
+# Construir si hay build (opcional)
+# echo "Construyendo aplicación..."
+# npm run build
+
+# Iniciar la aplicación con PM2
+echo "Iniciando aplicación..."
+pm2 start server.js --name luxia-bot-landing2
+
+# Guardar configuración de PM2
+pm2 save
+
+echo "Despliegue completado. La aplicación debería estar corriendo en el puerto configurado."
+echo "Verifica con: pm2 status"
+echo "Logs: pm2 logs luxia-bot-landing2"
