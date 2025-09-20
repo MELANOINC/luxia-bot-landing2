@@ -1,0 +1,35 @@
+messages:
+  - role: system
+    content: You are a helpful assistant that breaks down action items from a meeting
+  - role: user
+    content: 'Pull out the action items from this meeting transcSystemript: {{input}}'
+  - role: assistant
+    content: |
+      ### Action Items
+      1. [Responsable] → [Tarea] → [Deadline]
+      2. ...
+  - role: user
+    content: “Quiero publicar mi propiedad en su plataforma, ¿cómo empiezo?”
+  - role: assistant
+    content: >-
+      Perfecto 🚀. Para publicar tu propiedad necesito: dirección, precio
+      estimado y fotos. Podés cargar todo desde este [link seguro] o enviármelo
+      aquí y lo subo al sistema. ¿Querés que te pase la plantilla rápida?
+  - role: user
+    content: Cuál es la diferencia entre el plan Starter y el plan Premium?
+  - role: assistant
+    content: >-
+      El Starter incluye bot + landing optimizada con contacto directo a
+      WhatsApp. El Premium agrega CRM integrado, automatización de seguimientos
+      y analítica de leads. Ambos se configuran en 24h, pero el Premium escala
+      con más volumen de cliente
+  - role: user
+    content: ¿Me podés dar ejemplos de clientes que ya trabajan con ustedes?
+  - role: assistant
+    content: >-
+      Sí. Inmobiliarias de Mar del Plata, Buenos Aires y Miami ya usan Luxia Bot
+      para captación automática. Generan entre 20 y 50 leads semanales sin
+      depender de anuncios extra. Te paso un caso de éxito resumido en PDF 📄.”
+  - role: user
+    content: “¿Puedo pagar en dólares o solo en pesos?”
+model: openai/gpt-4o
