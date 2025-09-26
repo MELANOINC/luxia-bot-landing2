@@ -1,6 +1,14 @@
 # luxia-bot-landing2
 
-Servidor Express con conexión a Postgres (Supabase).
+Servidor Express con conexión a Postgres (Supabase) y Smart Contracts ERC-20.
+
+## Nuevas Características 🚀
+
+### Smart Contracts ERC-20
+- **LuxiaToken (LUXIA)**: Token estándar con minting y burning
+- **NotoriusToken (NOTORIOUS)**: Token avanzado con fees, blacklist y pausable
+- API endpoints para interactuar con los contratos
+- Tests completos para ambos tokens
 
 ## Requisitos
 - Node.js 18+
@@ -223,3 +231,136 @@ Resultado esperado: `DB ping ok: { ok: 1 }`
 - `POST /items` → Crear nuevo item con `{"name":"..."}`
 - `GET /auth/google` → Redirige a Google OAuth
 - `POST /webhook/n8n` → Webhook para N8N (requiere Bearer token)
+
+## Smart Contracts ERC-20 🚀
+
+Este proyecto ahora incluye smart contracts ERC-20 para tokens LUXIA y NOTORIOUS.
+
+### Características de los Tokens
+
+#### LuxiaToken (LUXIA)
+- **Supply inicial**: 1,000,000 LUXIA
+- **Supply máximo**: 10,000,000 LUXIA
+- **Características**:
+  - ERC-20 estándar
+  - Burnable (quemable)
+  - Minting controlado por owner
+  - Límite de supply
+
+#### NotoriusToken (NOTORIOUS)
+- **Supply inicial**: 500,000 NOTORIOUS
+- **Supply máximo**: 5,000,000 NOTORIOUS
+- **Características**:
+  - ERC-20 estándar
+  - Burnable (quemable)
+  - Pausable
+  - Transfer fees (1% por defecto)
+  - Sistema de blacklist
+  - Minting controlado por owner
+
+### Comandos de Smart Contracts
+
+```bash
+# Compilar contratos
+npm run compile
+
+# Ejecutar tests
+npm test
+
+# Iniciar nodo local
+npm run node
+
+# Desplegar contratos
+npm run deploy
+```
+
+### API Endpoints para Smart Contracts
+
+#### Web3 Status
+- `GET /web3/status` → Estado del servicio Web3
+
+#### LUXIA Token
+- `GET /tokens/luxia/info` → Información del token
+- `GET /tokens/luxia/balance/:address` → Balance de una dirección
+- `POST /tokens/luxia/transfer` → Transferir tokens
+- `POST /tokens/luxia/mint` → Crear nuevos tokens (solo owner)
+
+#### NOTORIOUS Token
+- `GET /tokens/notorious/info` → Información del token
+- `GET /tokens/notorious/balance/:address` → Balance de una dirección
+- `POST /tokens/notorious/transfer` → Transferir tokens (con fees)
+- `POST /tokens/notorious/set-fee` → Configurar fee de transferencia
+- `POST /tokens/notorious/blacklist` → Blacklistear dirección
+- `POST /tokens/notorious/pause` → Pausar transfers
+
+#### Configuración
+- `POST /web3/initialize` → Inicializar servicio Web3
+- `POST /web3/load-contracts` → Cargar contratos
+
+### Ejemplo de Uso
+
+```bash
+# 1. Inicializar Web3
+curl -X POST http://localhost:5678/web3/initialize \
+  -H "Content-Type: application/json" \
+  -d '{"providerUrl": "http://localhost:8545"}'
+
+# 2. Cargar contratos (después del deploy)
+curl -X POST http://localhost:5678/web3/load-contracts \
+  -H "Content-Type: application/json" \
+  -d '{
+    "luxiaAddress": "0x...",
+    "notoriusAddress": "0x..."
+  }'
+
+# 3. Obtener información de tokens
+curl http://localhost:5678/tokens/luxia/info
+curl http://localhost:5678/tokens/notorious/info
+
+# 4. Transferir tokens
+curl -X POST http://localhost:5678/tokens/luxia/transfer \
+  -H "Content-Type: application/json" \
+  -d '{"to": "0x...", "amount": 100}'
+```
+
+### Desarrollo con Smart Contracts
+
+1. **Terminal 1**: Iniciar blockchain local
+   ```bash
+   npx hardhat node
+   ```
+
+2. **Terminal 2**: Desplegar contratos
+   ```bash
+   npx hardhat run scripts/deploy.js --network localhost
+   ```
+
+3. **Terminal 3**: Iniciar servidor
+   ```bash
+   npm start
+   ```
+
+4. **Inicializar API**: Usar endpoints `/web3/initialize` y `/web3/load-contracts`
+
+### Tests
+
+Los contratos incluyen tests completos que cubren:
+- Deployment y configuración inicial
+- Funcionalidad de transferencias
+- Minting y burning
+- Sistema de fees (NOTORIOUS)
+- Funcionalidad de blacklist (NOTORIOUS)
+- Sistema pausable (NOTORIOUS)
+- Control de acceso
+- Casos edge y manejo de errores
+
+```bash
+# Ejecutar todos los tests
+npm test
+
+# Tests específicos
+npx hardhat test test/LuxiaToken.test.js
+npx hardhat test test/NotoriusToken.test.js
+```
+
+Para más detalles sobre los smart contracts, consulta [contracts/README.md](contracts/README.md).
