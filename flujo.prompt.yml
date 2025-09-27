@@ -32,7 +32,7 @@ messages:
       depender de anuncios extra. Te paso un caso de éxito resumido en PDF 📄.”
   - role: user
     content: “¿Puedo pagar en dólares o solo en pesos?”
-model: openai/gpt-4o
+model: openai/gpt-5
 testData: []
 evaluators:
   - name: Fluency
