@@ -33,3 +33,7 @@ messages:
   - role: user
     content: “¿Puedo pagar en dólares o solo en pesos?”
 model: openai/gpt-4o
+testData: []
+evaluators:
+  - name: Fluency
+    uses: github/fluency
