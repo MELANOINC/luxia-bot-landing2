@@ -1,4 +1,4 @@
-require('dotenv').config();
+﻿require('dotenv').config();
 const express = require('express');
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
@@ -11,7 +11,7 @@ const port = Number(process.env.PORT || 5678);
 const host = process.env.HOST || '127.0.0.1';
 
 // Middleware
-app.use(cors());
+app.use(cors()); // <-- FALTABA ESTO! Para webhooks de N8N
 app.use(express.json());
 app.use(session({
   secret: process.env.SESSION_SECRET || 'tu-secreto-aqui',
@@ -21,30 +21,25 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Configuración Passport Google OAuth (solo si están configuradas las credenciales)
-if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
-  passport.use(new GoogleStrategy({
-      clientID: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: `http://${host}:${port}/auth/google/callback`
-    },
-    (accessToken, refreshToken, profile, done) => {
-      return done(null, profile);
-    }
-  ));
+// Configuración Passport Google OAuth
+passport.use(new GoogleStrategy({
+    clientID: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callbackURL: `http://${host}:${port}/auth/google/callback`
+  },
+  (accessToken, refreshToken, profile, done) => {
+    // Aquí puedes guardar el usuario en BD si quieres
+    return done(null, profile);
+  }
+));
 
-  passport.serializeUser((user, done) => {
-    done(null, user);
-  });
+passport.serializeUser((user, done) => {
+  done(null, user);
+});
 
-  passport.deserializeUser((user, done) => {
-    done(null, user);
-  });
-  
-  console.log('✅ Google OAuth configured');
-} else {
-  console.log('⚠️ Google OAuth not configured (missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET)');
-}
+passport.deserializeUser((user, done) => {
+  done(null, user);
+});
 
 app.get('/', (req, res) => res.send(`Hola desde ${port}`));
 
@@ -61,6 +56,7 @@ app.get('/db-ping', async (req, res) => {
 // Endpoint de ejemplo: lista elementos desde public.items (si existe)
 app.get('/items', async (req, res) => {
 	try {
+		// Verificar existencia de la tabla
 		const check = await pool.query(
 			"select to_regclass('public.items') as tbl"
 		);
@@ -81,6 +77,7 @@ app.get('/items', async (req, res) => {
 // Endpoint para insertar nuevo item
 app.post('/items', async (req, res) => {
 	try {
+		// Verificar existencia de la tabla
 		const check = await pool.query(
 			"select to_regclass('public.items') as tbl"
 		);
@@ -91,50 +88,40 @@ app.post('/items', async (req, res) => {
 				howToCreate: "CREATE TABLE public.items (id uuid primary key default gen_random_uuid(), name text not null, created_at timestamptz default now());"
 			});
 		}
-
+		// Validación básica
 		const { name } = req.body;
-		if (!name) {
-			return res.status(400).json({ ok: false, error: "Campo 'name' requerido" });
+		if (!name || typeof name !== 'string' || name.trim().length === 0) {
+			return res.status(400).json({
+				ok: false,
+				error: "Campo 'name' requerido y no vacío"
+			});
 		}
-
+		// Insertar y devolver el registro creado
 		const { rows } = await pool.query(
 			'insert into public.items (name) values ($1) returning *',
-			[name]
+			[name.trim()]
 		);
-		res.json({ ok: true, item: rows[0] });
+		res.status(201).json({ ok: true, item: rows[0] });
 	} catch (e) {
 		res.status(500).json({ ok: false, error: e.message });
 	}
 });
 
-// Google OAuth routes (solo si OAuth está configurado)
-app.get('/auth/google', (req, res) => {
-  if (!process.env.GOOGLE_CLIENT_ID) {
-    return res.status(501).json({ 
-      ok: false, 
-      error: 'Google OAuth not configured. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables.' 
-    });
-  }
-  passport.authenticate('google', { scope: ['profile', 'email'] })(req, res);
-});
+// Rutas de autenticación Google
+app.get('/auth/google',
+  passport.authenticate('google', { scope: ['profile', 'email'] })
+);
 
-app.get('/auth/google/callback', (req, res) => {
-  if (!process.env.GOOGLE_CLIENT_ID) {
-    return res.redirect('/?error=oauth_not_configured');
-  }
-  passport.authenticate('google', { failureRedirect: '/' })(req, res, () => {
+app.get('/auth/google/callback',
+  passport.authenticate('google', { failureRedirect: '/' }),
+  (req, res) => {
+    // Autenticación exitosa
     res.redirect('/profile');
-  });
-});
-
-app.get('/profile', (req, res) => {
-  if (!process.env.GOOGLE_CLIENT_ID) {
-    return res.status(501).json({ 
-      ok: false, 
-      error: 'Google OAuth not configured' 
-    });
   }
-  
+);
+
+// Ruta protegida de ejemplo
+app.get('/profile', (req, res) => {
   if (!req.user) {
     return res.redirect('/auth/google');
   }
@@ -148,6 +135,7 @@ app.get('/profile', (req, res) => {
   });
 });
 
+// Logout
 app.get('/logout', (req, res) => {
   req.logout(() => {
     res.redirect('/');
@@ -157,11 +145,18 @@ app.get('/logout', (req, res) => {
 // Webhook endpoint para N8N
 app.post('/webhook/n8n', async (req, res) => {
   try {
+<<<<<<< HEAD
     console.log('📨 Webhook N8N recibido:', req.body);
     
+    // Procesar los datos del webhook
     const data = req.body;
     
+    // Aquí puedes guardar en BD o procesar los datos
+    // Ejemplo: guardar en tabla de logs
     if (data && Object.keys(data).length > 0) {
+      // Opcional: guardar en BD
+      // await pool.query('INSERT INTO webhook_logs (data, created_at) VALUES ($1, NOW())', [JSON.stringify(data)]);
+      
       res.json({ 
         ok: true, 
         message: 'Webhook procesado correctamente',
@@ -176,6 +171,7 @@ app.post('/webhook/n8n', async (req, res) => {
   }
 });
 
+// Endpoint GET para testear webhook
 app.get('/webhook/n8n', (req, res) => {
   res.json({ 
     ok: true, 
@@ -183,6 +179,41 @@ app.get('/webhook/n8n', (req, res) => {
     method: 'GET (para testing)',
     postEndpoint: '/webhook/n8n'
   });
+});
+
+=======
+    // Verificar token de N8N
+    const authHeader = req.headers.authorization;
+    const expectedToken = process.env.N8N_WEBHOOK_TOKEN || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI5M2YzOWUwYy01MTQ2LTRhNTEtYmMzMy1hYWM0MmNhODJkZDMiLCJpc3MiOiJuOG4iLCJhdWQiOiJwdWJsaWMtYXBpIiwiaWF0IjoxNzU3OTI1MzI1LCJleHAiOjE3NjA1MDA4MDB9.dfNaflEIfMgDKQrgHP8tVcC0YhXXUfXawRx3sZLJF_Q';
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Token de autorización requerido' });
+    }
+    
+    const token = authHeader.substring(7); // Remover 'Bearer '
+    
+    if (token !== expectedToken) {
+      return res.status(401).json({ error: 'Token inválido' });
+    }
+    
+    // Procesar datos del webhook
+    const webhookData = req.body;
+    console.log('Webhook N8N recibido:', webhookData);
+    
+    // Aquí puedes procesar los datos según tus necesidades
+    // Por ejemplo, guardar en BD, enviar email, etc.
+    
+    // Respuesta de éxito
+    res.json({ 
+      ok: true, 
+      message: 'Webhook procesado correctamente',
+      received: webhookData 
+    });
+    
+  } catch (error) {
+    console.error('Error en webhook N8N:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
 });
 
 // Initialize Web3 Service
