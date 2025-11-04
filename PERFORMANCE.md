@@ -182,6 +182,36 @@ autocannon -c 100 -d 30 http://localhost:5678/tokens/luxia/info
 
 ---
 
+## Security Considerations
+
+### Rate Limiting
+The application implements global rate limiting (100 requests per minute) applied to all routes via middleware. This protects against:
+- Brute force attacks
+- API abuse
+- Resource exhaustion
+
+The rate limiter uses in-memory storage which is suitable for single-instance deployments. For multi-instance deployments, consider using Redis or a distributed rate limiting solution.
+
+### Request Timeouts
+All requests have a 30-second timeout to prevent:
+- Hung connections
+- Resource exhaustion
+- Denial of service
+
+### Database Connection Limits
+Connection pooling with a maximum of 20 connections prevents:
+- Connection exhaustion
+- Database overload
+- Resource leaks
+
+### Graceful Shutdown
+Proper cleanup on SIGTERM/SIGINT ensures:
+- In-flight requests complete
+- Database connections close cleanly
+- No resource leaks on restart/deploy
+
+---
+
 ## Configuration Options
 
 ### Environment Variables
