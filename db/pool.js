@@ -60,6 +60,20 @@ function getSslOption(mode) {
   return false; 
 }
 
-const pool = new Pool(buildConfig());
+// Pool configuration with optimized settings
+const poolConfig = {
+  ...buildConfig(),
+  max: 20, // Maximum number of clients in the pool
+  idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
+  connectionTimeoutMillis: 5000, // Return error if connection takes longer than 5 seconds
+  maxUses: 7500, // Close and replace a connection after it has been used 7500 times
+};
+
+const pool = new Pool(poolConfig);
+
+// Handle pool errors
+pool.on('error', (err) => {
+  console.error('Unexpected error on idle database client', err);
+});
 
 module.exports = { pool };

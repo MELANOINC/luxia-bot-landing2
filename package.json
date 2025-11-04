@@ -9,6 +9,7 @@
     "verify": "node scripts/verify-setup.js",
     "compile": "hardhat compile",
     "test": "hardhat test",
+    "test:performance": "node scripts/test-performance.js",
     "deploy": "hardhat run scripts/deploy.js",
     "node": "hardhat node",
     "demo": "node scripts/demo.js"
