@@ -324,16 +324,30 @@ app.use(errorHandler);
 // Graceful shutdown
 const server = app.listen(port, host, () => console.log(`Servidor en http://${host}:${port}`));
 
-process.on('SIGTERM', () => {
-  console.log('SIGTERM signal received: closing HTTP server');
-  server.close(() => {
+async function gracefulShutdown(signal) {
+  console.log(`\n${signal} signal received: starting graceful shutdown`);
+  
+  // Stop accepting new connections
+  server.close(async () => {
     console.log('HTTP server closed');
+    
+    // Close database pool
+    try {
+      await pool.end();
+      console.log('Database pool closed');
+    } catch (err) {
+      console.error('Error closing database pool:', err);
+    }
+    
+    process.exit(0);
   });
-});
+  
+  // Force shutdown after 10 seconds
+  setTimeout(() => {
+    console.error('Forced shutdown after timeout');
+    process.exit(1);
+  }, 10000);
+}
 
-process.on('SIGINT', () => {
-  console.log('SIGINT signal received: closing HTTP server');
-  server.close(() => {
-    console.log('HTTP server closed');
-  });
-});
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));

@@ -45,7 +45,7 @@ class Web3Service {
 
   async initialize(providerUrl = 'http://localhost:8545') {
     try {
-      // Initialize provider with keepalive settings
+      // Initialize provider with optimization settings
       this.provider = new ethers.JsonRpcProvider(providerUrl, undefined, {
         staticNetwork: true, // Optimize for static networks
       });
@@ -193,21 +193,37 @@ class Web3Service {
     try {
       if (!this.notoriusToken) throw new Error('NotoriusToken not loaded');
       
-      // Cache token info since it rarely changes (except for paused state)
-      return await this.getOrCache('notorious:info', async () => {
-        const info = await this.notoriusToken.getTokenInfo();
-        return {
+      // Cache static info but always fetch mutable paused state
+      const info = await this.notoriusToken.getTokenInfo();
+      
+      // Get cached static data if available
+      const cachedStatic = this.cache.get('notorious:static');
+      let staticData;
+      
+      if (cachedStatic && Date.now() - cachedStatic.timestamp < 60000) {
+        staticData = cachedStatic.value;
+      } else {
+        staticData = {
           name: info[0],
           symbol: info[1],
           decimals: Number(info[2]),
-          totalSupply: ethers.formatEther(info[3]),
           maxSupply: ethers.formatEther(info[4]),
-          transferFee: `${Number(info[5]) / 100}%`,
-          feeCollector: info[6],
-          paused: info[7],
           address: this.contractAddresses.notorious
         };
-      }, 30000); // Cache for 30 seconds (shorter due to mutable state)
+        this.cache.set('notorious:static', {
+          value: staticData,
+          timestamp: Date.now()
+        });
+      }
+      
+      // Always include fresh mutable state
+      return {
+        ...staticData,
+        totalSupply: ethers.formatEther(info[3]), // Changes with minting/burning
+        transferFee: `${Number(info[5]) / 100}%`, // Can be changed by owner
+        feeCollector: info[6], // Can be changed by owner
+        paused: info[7], // Can change frequently - never cache
+      };
     } catch (error) {
       throw new Error(`Failed to get Notorious token info: ${error.message}`);
     }

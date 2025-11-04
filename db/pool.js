@@ -76,17 +76,4 @@ pool.on('error', (err) => {
   console.error('Unexpected error on idle database client', err);
 });
 
-// Graceful shutdown
-process.on('SIGINT', async () => {
-  console.log('Closing database pool...');
-  await pool.end();
-  process.exit(0);
-});
-
-process.on('SIGTERM', async () => {
-  console.log('Closing database pool...');
-  await pool.end();
-  process.exit(0);
-});
-
 module.exports = { pool };

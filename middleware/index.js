@@ -52,8 +52,8 @@ function requestTimeout(timeout = 30000) {
 function rateLimit({ windowMs = 60000, max = 100 } = {}) {
   const requests = new Map();
   
-  // Clean up old entries periodically
-  setInterval(() => {
+  // Clean up old entries periodically (only set once per instance)
+  const cleanupInterval = setInterval(() => {
     const now = Date.now();
     for (const [key, data] of requests.entries()) {
       if (now - data.resetTime > windowMs) {
@@ -61,6 +61,9 @@ function rateLimit({ windowMs = 60000, max = 100 } = {}) {
       }
     }
   }, windowMs);
+  
+  // Prevent the interval from keeping the process alive
+  cleanupInterval.unref();
   
   return (req, res, next) => {
     const key = req.ip || req.connection.remoteAddress;
