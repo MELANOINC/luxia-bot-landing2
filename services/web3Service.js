@@ -13,17 +13,50 @@ class Web3Service {
       luxia: null,
       notorious: null
     };
+    // Cache for token info
+    this.cache = new Map();
+    this.CACHE_TTL = 30000; // 30 seconds cache
+  }
+
+  /**
+   * Get cached value or execute function and cache result
+   */
+  async getOrCache(key, fn, ttl = this.CACHE_TTL) {
+    const cached = this.cache.get(key);
+    if (cached && Date.now() - cached.timestamp < ttl) {
+      return cached.value;
+    }
+    
+    const value = await fn();
+    this.cache.set(key, {
+      value,
+      timestamp: Date.now()
+    });
+    
+    return value;
+  }
+
+  /**
+   * Clear cache (useful for testing or after state changes)
+   */
+  clearCache() {
+    this.cache.clear();
   }
 
   async initialize(providerUrl = 'http://localhost:8545') {
     try {
-      // Initialize provider
-      this.provider = new ethers.JsonRpcProvider(providerUrl);
+      // Initialize provider with keepalive settings
+      this.provider = new ethers.JsonRpcProvider(providerUrl, undefined, {
+        staticNetwork: true, // Optimize for static networks
+      });
       
       // For demo purposes, we'll use a default private key
       // In production, this should be loaded securely
       const privateKey = process.env.PRIVATE_KEY || '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
       this.signer = new ethers.Wallet(privateKey, this.provider);
+
+      // Test connection
+      await this.provider.getBlockNumber();
 
       console.log('✅ Web3Service initialized');
       console.log('Provider:', providerUrl);
@@ -87,15 +120,18 @@ class Web3Service {
     try {
       if (!this.luxiaToken) throw new Error('LuxiaToken not loaded');
       
-      const info = await this.luxiaToken.getTokenInfo();
-      return {
-        name: info[0],
-        symbol: info[1],
-        decimals: Number(info[2]),
-        totalSupply: ethers.formatEther(info[3]),
-        maxSupply: ethers.formatEther(info[4]),
-        address: this.contractAddresses.luxia
-      };
+      // Cache token info since it rarely changes
+      return await this.getOrCache('luxia:info', async () => {
+        const info = await this.luxiaToken.getTokenInfo();
+        return {
+          name: info[0],
+          symbol: info[1],
+          decimals: Number(info[2]),
+          totalSupply: ethers.formatEther(info[3]),
+          maxSupply: ethers.formatEther(info[4]),
+          address: this.contractAddresses.luxia
+        };
+      }, 60000); // Cache for 1 minute
     } catch (error) {
       throw new Error(`Failed to get Luxia token info: ${error.message}`);
     }
@@ -119,6 +155,9 @@ class Web3Service {
       const tx = await this.luxiaToken.transfer(to, ethers.parseEther(amount.toString()));
       const receipt = await tx.wait();
       
+      // Clear cache after state-changing operation
+      this.clearCache();
+      
       return {
         txHash: receipt.hash,
         blockNumber: receipt.blockNumber,
@@ -136,6 +175,9 @@ class Web3Service {
       const tx = await this.luxiaToken.mint(to, ethers.parseEther(amount.toString()));
       const receipt = await tx.wait();
       
+      // Clear cache after state-changing operation
+      this.clearCache();
+      
       return {
         txHash: receipt.hash,
         blockNumber: receipt.blockNumber,
@@ -151,18 +193,21 @@ class Web3Service {
     try {
       if (!this.notoriusToken) throw new Error('NotoriusToken not loaded');
       
-      const info = await this.notoriusToken.getTokenInfo();
-      return {
-        name: info[0],
-        symbol: info[1],
-        decimals: Number(info[2]),
-        totalSupply: ethers.formatEther(info[3]),
-        maxSupply: ethers.formatEther(info[4]),
-        transferFee: `${Number(info[5]) / 100}%`,
-        feeCollector: info[6],
-        paused: info[7],
-        address: this.contractAddresses.notorious
-      };
+      // Cache token info since it rarely changes (except for paused state)
+      return await this.getOrCache('notorious:info', async () => {
+        const info = await this.notoriusToken.getTokenInfo();
+        return {
+          name: info[0],
+          symbol: info[1],
+          decimals: Number(info[2]),
+          totalSupply: ethers.formatEther(info[3]),
+          maxSupply: ethers.formatEther(info[4]),
+          transferFee: `${Number(info[5]) / 100}%`,
+          feeCollector: info[6],
+          paused: info[7],
+          address: this.contractAddresses.notorious
+        };
+      }, 30000); // Cache for 30 seconds (shorter due to mutable state)
     } catch (error) {
       throw new Error(`Failed to get Notorious token info: ${error.message}`);
     }
@@ -186,6 +231,9 @@ class Web3Service {
       const tx = await this.notoriusToken.transfer(to, ethers.parseEther(amount.toString()));
       const receipt = await tx.wait();
       
+      // Clear cache after state-changing operation
+      this.clearCache();
+      
       return {
         txHash: receipt.hash,
         blockNumber: receipt.blockNumber,
@@ -202,6 +250,9 @@ class Web3Service {
       
       const tx = await this.notoriusToken.setTransferFee(feePercent * 100); // Convert to basis points
       const receipt = await tx.wait();
+      
+      // Clear cache after state-changing operation
+      this.clearCache();
       
       return {
         txHash: receipt.hash,
@@ -220,6 +271,9 @@ class Web3Service {
       const tx = await this.notoriusToken.blacklistAddress(address);
       const receipt = await tx.wait();
       
+      // Clear cache after state-changing operation
+      this.clearCache();
+      
       return {
         txHash: receipt.hash,
         blockNumber: receipt.blockNumber,
@@ -236,6 +290,9 @@ class Web3Service {
       
       const tx = await this.notoriusToken.pause();
       const receipt = await tx.wait();
+      
+      // Clear cache after state-changing operation
+      this.clearCache();
       
       return {
         txHash: receipt.hash,
