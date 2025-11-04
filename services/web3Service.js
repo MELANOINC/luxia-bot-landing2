@@ -1,5 +1,6 @@
 const { ethers } = require('ethers');
-const fs = require('fs');
+const fs = require('fs').promises;
+const fsSync = require('fs');
 const path = require('path');
 
 class Web3Service {
@@ -42,8 +43,8 @@ class Web3Service {
       }
 
       // Load contract ABIs
-      const luxiaArtifact = this.loadArtifact('LuxiaToken');
-      const notoriusArtifact = this.loadArtifact('NotoriusToken');
+      const luxiaArtifact = await this.loadArtifact('LuxiaToken');
+      const notoriusArtifact = await this.loadArtifact('NotoriusToken');
 
       if (!luxiaArtifact || !notoriusArtifact) {
         throw new Error('Contract artifacts not found. Please compile contracts first.');
@@ -67,11 +68,12 @@ class Web3Service {
     }
   }
 
-  loadArtifact(contractName) {
+  async loadArtifact(contractName) {
     try {
       const artifactPath = path.join(__dirname, '..', 'artifacts', 'contracts', `${contractName}.sol`, `${contractName}.json`);
-      if (fs.existsSync(artifactPath)) {
-        return JSON.parse(fs.readFileSync(artifactPath, 'utf8'));
+      if (fsSync.existsSync(artifactPath)) {
+        const data = await fs.readFile(artifactPath, 'utf8');
+        return JSON.parse(data);
       }
       return null;
     } catch (error) {
