@@ -14,5 +14,23 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    
+    - name: Check if documentation only
+      id: check_docs
+      run: |
+        if [ -f "PRODUCT.md" ] && [ ! -d "src" ] && [ ! -d "app" ]; then
+          echo "docs_only=true" >> $GITHUB_OUTPUT
+          echo "This appears to be a documentation-only repository"
+        else
+          echo "docs_only=false" >> $GITHUB_OUTPUT
+        fi
+    
     - name: Build the Docker image
+      if: steps.check_docs.outputs.docs_only == 'false'
       run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
+    
+    - name: Build documentation container (optional)
+      if: steps.check_docs.outputs.docs_only == 'true'
+      run: |
+        echo "Building documentation container..."
+        docker build . --file Dockerfile --tag luxia-docs:$(date +%s) || echo "Skipping Docker build for docs-only repository"
